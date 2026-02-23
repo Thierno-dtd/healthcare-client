@@ -10,7 +10,6 @@ import { MainLayout } from '@shared/components/layout';
 import LandingPage from '@features/landing/components/LandingPage';
 import { LoginPage } from '@features/auth';
 import Dashboard from '@features/dashboard/components/Dashboard';
-import DiagnosticIA from '@features/diagnostic/components/DiagnosticIA';
 import ExpertMedical from '@features/expert-medical/components/ExpertMedical';
 import Examens from '@features/examens/components/Examens';
 import Disponibilites from '@features/disponibilites/components/Disponibilites';
@@ -25,6 +24,7 @@ import Medicaments from '@features/dossier-medical/components/Medicaments';
 import DossiersPatients from '@features/dossier-medical/components/DossiersPatients';
 import CasSpeciaux from '@features/dossier-medical/components/CasSpeciaux';
 import Ordonnances from '@features/ordonnances/components/Ordonnances';
+import { DiagnosticIA } from '@features/diagnostic';
 
 // Pharmacien
 import ScanQR from '@features/pharmacie/components/ScanQR';
@@ -69,7 +69,6 @@ const AppRoutes: React.FC = () => {
       >
         {/* Common routes */}
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="diagnostic-ia" element={<DiagnosticIA />} />
         <Route path="expert-medical" element={<ExpertMedical />} />
         <Route path="examens" element={<Examens />} />
         <Route path="disponibilites" element={<Disponibilites />} />
@@ -102,6 +101,14 @@ const AppRoutes: React.FC = () => {
         />
 
         {/* Medecin routes */}
+        <Route
+          path="medecin/diagnostic-ia"
+          element={
+            <ProtectedRoute allowedRoles={['medecin']}>
+              <DiagnosticIA />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="medecin/patients"
           element={

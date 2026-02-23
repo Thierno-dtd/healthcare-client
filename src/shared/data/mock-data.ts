@@ -10,8 +10,6 @@ import type {
 } from '@shared/types/medical.types';
 import type { DashboardCard, MenuConfig, MenuSection } from '@shared/types/common.types';
 
-// --- Utilisateurs mock ---
-
 export const MOCK_USERS: Record<string, User> = {
   medecin: {
     id: 'med_001',
@@ -62,7 +60,6 @@ export const MOCK_USERS: Record<string, User> = {
 
 export const DASHBOARD_CARDS: { common: DashboardCard[] } & Partial<Record<string, DashboardCard[]>> = {
   common: [
-    { id: 'diagnostic-ia', title: 'Diagnostic IA', description: "Analysez des images médicales avec l'IA pour un diagnostic précis et rapide.", icon: 'fas fa-stethoscope', route: '/diagnostic-ia', color: 'blue', roles: ['medecin', 'patient'] },
     { id: 'expert-medical', title: 'Expert Médical', description: 'Chatbot médical avec modes patient et médecin pour des conseils adaptés.', icon: 'fas fa-comments', route: '/expert-medical', color: 'green', roles: ['medecin', 'patient', 'pharmacien'] },
     { id: 'examens', title: 'Examens médicaux', description: "Créez, planifiez et gérez l'historique de vos examens médicaux.", icon: 'fas fa-file-medical', route: '/examens', color: 'purple', roles: ['medecin', 'patient'] },
     { id: 'disponibilites', title: 'Disponibilités des centres', description: 'Trouvez les cliniques, hôpitaux et pharmacies disponibles près de vous.', icon: 'fas fa-map-marker-alt', route: '/disponibilites', color: 'orange', roles: ['medecin', 'patient'] },
@@ -73,6 +70,7 @@ export const DASHBOARD_CARDS: { common: DashboardCard[] } & Partial<Record<strin
     { id: 'medicaments', title: 'Analyser mes médicaments', description: 'Vérifiez les interactions et obtenez des informations sur vos médicaments.', icon: 'fas fa-pills', route: '/patient/medicaments', color: 'green', badge: 'Pa' },
   ],
   medecin: [
+    { id: 'diagnostic-ia', title: 'Diagnostic IA', description: "Analysez des images médicales avec l'IA pour un diagnostic précis et rapide.", icon: 'fas fa-stethoscope', route: '/medecin/diagnostic-ia', color: 'blue', badge: 'Dr' },
     { id: 'dossiers-patients', title: 'Dossiers patients', description: 'Accédez aux dossiers médicaux de vos patients autorisés.', icon: 'fas fa-user-injured', route: '/medecin/patients', color: 'blue', badge: 'Dr' },
     { id: 'cas-speciaux', title: 'Cas spéciaux', description: "Collaborez avec d'autres experts sur des cas médicaux complexes.", icon: 'fas fa-user-friends', route: '/medecin/cas-speciaux', color: 'purple', badge: 'Dr' },
     { id: 'ordonnances', title: 'Ordonnances QR', description: 'Créez des ordonnances sécurisées avec code QR.', icon: 'fas fa-prescription', route: '/medecin/ordonnances', color: 'green', badge: 'Dr' },
@@ -135,7 +133,7 @@ export const MENU_CONFIG: MenuConfig = {
       section: 'Général',
       items: [
         { id: 'dashboard', label: 'Tableau de bord', icon: 'fas fa-tachometer-alt', route: '/dashboard' },
-        { id: 'diagnostic', label: 'Diagnostic IA', icon: 'fas fa-stethoscope', badge: 'Dr', route: '/diagnostic-ia' },
+        { id: 'diagnostic', label: 'Diagnostic IA', icon: 'fas fa-stethoscope', badge: 'Dr', route: '/medecin/diagnostic-ia' },
         { id: 'expert', label: 'Expert Médical', icon: 'fas fa-comments', route: '/expert-medical' },
       ],
     },

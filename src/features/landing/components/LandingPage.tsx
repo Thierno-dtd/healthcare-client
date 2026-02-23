@@ -17,7 +17,7 @@ const LandingPage: React.FC = () => {
               <div className="logo-icon">
                 <i className="fas fa-heartbeat"></i>
               </div>
-              LAMASSE <span>DAMA</span>
+              LAMESSE <span>DAMA</span>
             </div>
             <div className="nav-links">
               <a href="#features">Fonctionnalités</a>

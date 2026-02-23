@@ -9,7 +9,6 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
-  DIAGNOSTIC_IA: '/diagnostic-ia',
   EXPERT_MEDICAL: '/expert-medical',
   EXAMENS: '/examens',
   DISPONIBILITES: '/disponibilites',
@@ -21,6 +20,7 @@ export const ROUTES = {
     MEDICAMENTS: '/patient/medicaments',
   },
   MEDECIN: {
+    DIAGNOSTIC_IA: '/medecin/diagnostic-ia',
     PATIENTS: '/medecin/patients',
     CAS_SPECIAUX: '/medecin/cas-speciaux',
     ORDONNANCES: '/medecin/ordonnances',
@@ -104,7 +104,7 @@ export const ROLE_LABELS: Record<string, string> = {
 // --- Page titles mapping ---
 export const PAGE_TITLES: Record<string, string> = {
   dashboard: 'Tableau de bord',
-  'diagnostic-ia': 'Diagnostic IA',
+
   'expert-medical': 'Expert Médical',
   examens: 'Examens médicaux',
   disponibilites: 'Disponibilités des centres',
@@ -112,6 +112,7 @@ export const PAGE_TITLES: Record<string, string> = {
   'patient/dossier': 'Mon dossier médical',
   'patient/etat-sante': 'Mon état de santé',
   'patient/medicaments': 'Mes médicaments',
+  'medecin/diagnostic-ia': 'Diagnostic IA',
   'medecin/patients': 'Dossiers patients',
   'medecin/cas-speciaux': 'Cas spéciaux',
   'medecin/ordonnances': 'Ordonnances',

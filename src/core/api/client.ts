@@ -17,12 +17,13 @@ const apiClient: AxiosInstance = axios.create({
 // --- Request interceptor : ajoute le token ---
 apiClient.interceptors.request.use(
   (config) => {
-    const storedUser = localStorage.getItem('mediconnect_user');
-    if (storedUser) {
+    const stored = localStorage.getItem('mediconnect_auth');
+    if (stored) {
       try {
-        const user = JSON.parse(storedUser);
-        if (user?.token) {
-          config.headers.Authorization = `Bearer ${user.token}`;
+        const parsed = JSON.parse(stored);
+        const token = parsed?.state?.user?.token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
       } catch {
         // Token invalide, on continue sans
@@ -38,7 +39,7 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('mediconnect_user');
+      localStorage.removeItem('mediconnect_auth');
       window.location.href = '/login';
     }
     return Promise.reject(error);
