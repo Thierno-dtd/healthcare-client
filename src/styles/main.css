@@ -287,7 +287,8 @@ a {
 
 .app-container {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .sidebar {
@@ -298,6 +299,8 @@ a {
     flex-direction: column;
     transition: all 0.3s;
     flex-shrink: 0;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .sidebar-header {
@@ -321,6 +324,7 @@ a {
     padding: 20px 0;
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .nav-section {
