@@ -60,7 +60,6 @@ export const MOCK_USERS: Record<string, User> = {
 
 export const DASHBOARD_CARDS: { common: DashboardCard[] } & Partial<Record<string, DashboardCard[]>> = {
   common: [
-    { id: 'expert-medical', title: 'Expert Médical', description: 'Chatbot médical avec modes patient et médecin pour des conseils adaptés.', icon: 'fas fa-comments', route: '/expert-medical', color: 'green', roles: ['medecin', 'patient', 'pharmacien'] },
     { id: 'examens', title: 'Examens médicaux', description: "Créez, planifiez et gérez l'historique de vos examens médicaux.", icon: 'fas fa-file-medical', route: '/examens', color: 'purple', roles: ['medecin', 'patient'] },
   ],
   patient: [
@@ -71,12 +70,16 @@ export const DASHBOARD_CARDS: { common: DashboardCard[] } & Partial<Record<strin
     { id: 'ordonnances', title: 'Mes ordonnances', description: 'Consultez vos prescriptions et générez vos QR codes.', icon: 'fas fa-prescription', route: '/patient/ordonnances', color: 'amber', badge: 'Pa' },
     { id: 'gestion-acces', title: 'Gestion des accès', description: 'Contrôlez qui accède à votre dossier médical.', icon: 'fas fa-shield-alt', route: '/patient/gestion-acces', color: 'indigo', badge: 'Pa' },
     { id: 'disponibilites', title: 'Centres de santé', description: 'Trouvez les établissements de santé disponibles près de vous.', icon: 'fas fa-map-marker-alt', route: '/patient/disponibilites', color: 'orange', badge: 'Pa' },
+    { id: 'expert-medical-patient', title: 'Expert Médical IA', description: 'Posez vos questions de santé à notre assistant intelligent.', icon: 'fas fa-robot', route: '/patient/expert-medical', color: 'green', badge: 'Pa' },
+    { id: 'appel-video-patient', title: 'Appel vidéo', description: 'Rejoignez vos téléconsultations planifiées avec vos médecins.', icon: 'fas fa-video', route: '/patient/appel-video', color: 'teal', badge: 'Pa' },
   ],
   medecin: [
     { id: 'diagnostic-ia', title: 'Diagnostic IA', description: "Analysez des images médicales avec l'IA pour un diagnostic précis et rapide.", icon: 'fas fa-stethoscope', route: '/medecin/diagnostic-ia', color: 'blue', badge: 'Dr' },
     { id: 'dossiers-patients', title: 'Dossiers patients', description: 'Accédez aux dossiers médicaux de vos patients autorisés.', icon: 'fas fa-user-injured', route: '/medecin/patients', color: 'blue', badge: 'Dr' },
     { id: 'cas-speciaux', title: 'Cas spéciaux', description: "Collaborez avec d'autres experts sur des cas médicaux complexes.", icon: 'fas fa-user-friends', route: '/medecin/cas-speciaux', color: 'purple', badge: 'Dr' },
     { id: 'ordonnances', title: 'Ordonnances QR', description: 'Créez des ordonnances sécurisées avec code QR.', icon: 'fas fa-prescription', route: '/medecin/ordonnances', color: 'green', badge: 'Dr' },
+    { id: 'expert-medical-medecin', title: 'Expert Médical IA', description: 'Assistant IA pour vous aider dans vos diagnostics et recherches.', icon: 'fas fa-robot', route: '/medecin/expert-medical', color: 'green', badge: 'Dr' },
+    { id: 'appel-video-medecin', title: 'Appel vidéo', description: 'Lancez des téléconsultations avec vos patients autorisés.', icon: 'fas fa-video', route: '/medecin/appel-video', color: 'teal', badge: 'Dr' },
   ],
   pharmacien: [
     { id: 'dechiffrage-ordonnances', title: "Déchiffrage d'ordonnances", description: 'Scannez et déchiffrez les ordonnances QR des patients.', icon: 'fas fa-qrcode', route: '/pharmacien/scan-qr', color: 'blue', badge: 'Ph' },
@@ -137,7 +140,7 @@ export const MENU_CONFIG: MenuConfig = {
       items: [
         { id: 'dashboard', label: 'Tableau de bord', icon: 'fas fa-tachometer-alt', route: '/dashboard' },
         { id: 'diagnostic', label: 'Diagnostic IA', icon: 'fas fa-stethoscope', badge: 'Dr', route: '/medecin/diagnostic-ia' },
-        { id: 'expert', label: 'Expert Médical', icon: 'fas fa-comments', route: '/expert-medical' },
+        { id: 'expert', label: 'Expert Médical IA', icon: 'fas fa-robot', badge: 'Dr', route: '/medecin/expert-medical' },
       ],
     },
     {
@@ -152,6 +155,13 @@ export const MENU_CONFIG: MenuConfig = {
       section: 'Médicaments & Ordonnances',
       items: [
         { id: 'ordonnances', label: 'Ordonnances QR', icon: 'fas fa-prescription', route: '/medecin/ordonnances' },
+      ],
+    },
+    {
+      section: 'Santé & Disponibilités',
+      items: [
+        { id: 'rendez-vous', label: 'Rendez-vous', icon: 'fas fa-calendar-check', badge: 'Dr', route: '/medecin/patients' },
+        { id: 'appel-video', label: 'Appel vidéo', icon: 'fas fa-video', badge: 'Dr', route: '/medecin/appel-video' },
       ],
     },
   ],
@@ -182,7 +192,8 @@ export const MENU_CONFIG: MenuConfig = {
       section: 'Santé & Disponibilités',
       items: [
         { id: 'etat', label: 'Mon état de santé', icon: 'fas fa-heartbeat', badge: 'Pa', route: '/patient/etat-sante' },
-        { id: 'rendez-vous', label: 'Mes rendez-vous', icon: 'fas fa-calendar-check', badge: 'Pa', route: '/patient/rendez-vous' },
+        { id: 'rendez-vous', label: 'Rendez-vous', icon: 'fas fa-calendar-check', route: '/patient/rendez-vous' },
+        { id: 'appel-video', label: 'Appel vidéo', icon: 'fas fa-video', route: '/patient/appel-video' },
         { id: 'disponibilites', label: 'Centres de santé', icon: 'fas fa-map-marker-alt', route: '/patient/disponibilites' },
       ],
     },
@@ -192,7 +203,6 @@ export const MENU_CONFIG: MenuConfig = {
       section: 'Général',
       items: [
         { id: 'dashboard', label: 'Tableau de bord', icon: 'fas fa-tachometer-alt', route: '/dashboard' },
-        { id: 'expert', label: 'Expert Médical', icon: 'fas fa-comments', route: '/expert-medical' },
       ],
     },
     {

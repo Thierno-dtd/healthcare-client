@@ -10,9 +10,7 @@ import { MainLayout } from '@shared/components/layout';
 import LandingPage from '@features/landing/components/LandingPage';
 import { LoginPage } from '@features/auth';
 import Dashboard from '@features/dashboard/components/Dashboard';
-import ExpertMedical from '@features/expert-medical/components/ExpertMedical';
 import Examens from '@features/examens/components/Examens';
-// VerificationQR is handled via pharmacien/scan-qr route
 
 // Patient
 import { DossierMedical } from '@features/dossier-medical';
@@ -25,12 +23,14 @@ import {
   ExpertMedicalPatient,
   DisponibilitesPatient,
 } from '@features/patient';
+import AppelVideoPatient from '@features/patient/components/AppelVideoPatient';
 
 // Medecin
 import DossiersPatients from '@features/dossier-medical/components/DossiersPatients';
 import CasSpeciaux from '@features/dossier-medical/components/CasSpeciaux';
 import Ordonnances from '@features/ordonnances/components/Ordonnances';
 import { DiagnosticIA } from '@features/diagnostic';
+import AppelVideoMedecin from '@features/dossier-medical/components/AppelVideoMedecin';
 
 // Pharmacien
 import ScanQR from '@features/pharmacie/components/ScanQR';
@@ -75,7 +75,6 @@ const AppRoutes: React.FC = () => {
       >
         {/* Common routes */}
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="expert-medical" element={<ExpertMedical />} />
         <Route path="examens" element={<Examens />} />
 
         {/* Patient routes */}
@@ -143,8 +142,24 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="patient/appel-video"
+          element={
+            <ProtectedRoute allowedRoles={['patient']}>
+              <AppelVideoPatient />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Medecin routes */}
+        <Route
+          path="medecin/expert-medical"
+          element={
+            <ProtectedRoute allowedRoles={['medecin']}>
+              <ExpertMedicalPatient />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="medecin/diagnostic-ia"
           element={
@@ -174,6 +189,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['medecin']}>
               <Ordonnances />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="medecin/appel-video"
+          element={
+            <ProtectedRoute allowedRoles={['medecin']}>
+              <AppelVideoMedecin />
             </ProtectedRoute>
           }
         />
