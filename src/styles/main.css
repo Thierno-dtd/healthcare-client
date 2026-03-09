@@ -43,6 +43,11 @@ a {
     font-family: 'Inter', sans-serif;
 }
 
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
 .btn-primary {
     background-color: #2a6b8f;
     color: white;
@@ -380,6 +385,48 @@ a {
     margin-left: auto;
 }
 
+.badge-success {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.badge-info {
+    background-color: #cffafe;
+    color: #155e75;
+    border: 1px solid #a5f3fc;
+}
+
+.badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.badge-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.badge-medical {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.medicament-item {
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.medicament-item--taken {
+    background: #d1fae5;
+    border-color: #a7f3d0;
+}
+
 .sidebar-footer {
     padding: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -563,6 +610,38 @@ a {
     gap: 25px;
 }
 
+/* Layout helper for 2/3 - 1/3 split (used in Mes ordonnances "Toutes" view) */
+.content-grid--2-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+@media (max-width: 1024px) {
+    .content-grid--2-1 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.link-action {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: #1d4ed8;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+.link-action:hover {
+    text-decoration: none;
+}
+
+.link-action:focus {
+    outline: 2px solid rgba(37, 99, 235, 0.5);
+    outline-offset: 2px;
+}
+
 .content-card-app {
     background: white;
     border-radius: 12px;
@@ -576,6 +655,75 @@ a {
 .content-card-app:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.rendezvous-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    transition: box-shadow 0.2s ease;
+}
+
+.rendezvous-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.rendezvous-date {
+    width: 72px;
+    min-width: 72px;
+    padding: 14px 10px;
+    border-radius: 16px;
+    background: #f3f9ff;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.rendezvous-date-month {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e3a5a;
+    text-transform: uppercase;
+}
+
+.rendezvous-date-day {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1e3a5a;
+    line-height: 1;
+}
+
+.rendezvous-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.rendezvous-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.rendezvous-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.rendezvous-actions .badge {
+    white-space: nowrap;
+}
+
+.rendezvous-actions button {
+    white-space: nowrap;
 }
 
 .card-header {
@@ -802,14 +950,15 @@ a {
 
     .sidebar-nav {
         display: flex;
-        overflow-x: auto;
+        flex-direction: column;
+        overflow-x: hidden;
         padding: 10px 0;
     }
 
     .nav-section {
-        margin-bottom: 0;
-        margin-right: 30px;
-        min-width: 200px;
+        margin-bottom: 20px;
+        margin-right: 0;
+        min-width: auto;
     }
 
     .top-bar {

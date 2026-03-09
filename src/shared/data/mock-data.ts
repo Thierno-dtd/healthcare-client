@@ -100,6 +100,44 @@ export const NOTIFICATIONS: Notification[] = [
   { id: 'notif_3', type: 'success', title: 'Prescription validée', message: 'Votre ordonnance a été validée par le médecin', date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), read: true, roles: ['patient'] },
 ];
 
+export const JOURNAL_ACHATS_PHARMACIE = [
+  {
+    id: 'journal_1',
+    pharmacie: 'Pharmacie du Centre',
+    date: '2024-05-18T16:45:00',
+    note: 'Achat validé via QR Code',
+    items: ['Amlodipine', 'Aspirine'],
+  },
+  {
+    id: 'journal_2',
+    pharmacie: 'Pharmacie de la Mairie',
+    date: '2024-05-12T09:12:00',
+    note: 'Renouvellement ordonnance',
+    items: ['Larmes Artificielles', 'Vitamines'],
+  },
+  {
+    id: 'journal_3',
+    pharmacie: 'Pharmacie du Parc',
+    date: '2024-05-10T14:20:00',
+    note: 'Achat de premiers secours',
+    items: ['Pansements', 'Antiseptique'],
+  },
+  {
+    id: 'journal_4',
+    pharmacie: 'Pharmacie Centrale',
+    date: '2024-04-28T11:30:00',
+    note: 'Achat avec ordonnance',
+    items: ['Paracétamol', 'Sirop'],
+  },
+  {
+    id: 'journal_5',
+    pharmacie: 'Pharmacie Saint-Michel',
+    date: '2024-04-15T15:05:00',
+    note: 'Achat libre',
+    items: ['Somnifères', 'Vitamine D'],
+  },
+];
+
 // --- Examens ---
 
 export const EXAMENS: Examen[] = [

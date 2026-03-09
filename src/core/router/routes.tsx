@@ -24,6 +24,7 @@ import {
   DisponibilitesPatient,
 } from '@features/patient';
 import AppelVideoPatient from '@features/patient/components/AppelVideoPatient';
+import JournalAchatPharmacie from '@features/patient/components/JournalAchatPharmacie';
 
 // Medecin
 import DossiersPatients from '@features/dossier-medical/components/DossiersPatients';
@@ -131,6 +132,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['patient']}>
               <OrdonnancesPatient />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="patient/ordonnances/journaux"
+          element={
+            <ProtectedRoute allowedRoles={['patient']}>
+              <JournalAchatPharmacie />
             </ProtectedRoute>
           }
         />

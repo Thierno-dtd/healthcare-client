@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-// Styles
+// Legacy styles
 import '../styles/main.css';
 import '../styles/landing.css';
 import '../styles/animations.css';

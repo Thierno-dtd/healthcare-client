@@ -28,7 +28,7 @@ const RendezVousPatient: React.FC = () => {
   const creer = useCreerRendezVous(patientId);
   const annuler = useAnnulerRendezVous(patientId);
 
-  const [filter, setFilter] = useState<FilterTab>('tous');
+  const [filter, setFilter] = useState<FilterTab>('a_venir');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<CreateRendezVousDTO>({
     medecinId: '',
@@ -52,9 +52,13 @@ const RendezVousPatient: React.FC = () => {
     }
   }, [rendezVous, filter, today]);
 
-  const prochainRdv = rendezVous?.find(
-    (r) => r.date >= today && (r.status === 'confirme' || r.status === 'planifie')
-  );
+  const recentHistory = useMemo(() => {
+    if (!rendezVous) return [];
+    return [...rendezVous]
+      .filter((r) => r.status === 'termine' || r.status === 'annule')
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 2);
+  }, [rendezVous]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,55 +97,19 @@ const RendezVousPatient: React.FC = () => {
       </div>
 
       <div className="content-body">
-        {/* Prochain rendez-vous */}
-        {prochainRdv && (
-          <div className="content-card-app mb-6 border-l-4 border-teal-500">
-            <h3 className="card-title">
-              <i className="fas fa-calendar-check text-teal-500"></i> Prochain rendez-vous
-            </h3>
-            <div className="flex items-center gap-4 mt-3">
-              <div className="avatar avatar-lg">
-                <span>{prochainRdv.avatar}</span>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold">{prochainRdv.medecinNom}</h4>
-                <p className="text-sm text-gray-500">{prochainRdv.specialite}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm">
-                  <span>
-                    <i className="fas fa-calendar"></i>{' '}
-                    {new Date(prochainRdv.date).toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                    })}
-                  </span>
-                  <span>
-                    <i className="fas fa-clock"></i> {prochainRdv.heure}
-                  </span>
-                  <span>
-                    <i className="fas fa-map-marker-alt"></i> {prochainRdv.lieu}
-                  </span>
-                </div>
-              </div>
-              <span className={`badge ${STATUS_CONFIG[prochainRdv.status].badge}`}>
-                {STATUS_CONFIG[prochainRdv.status].label}
-              </span>
-            </div>
-          </div>
-        )}
 
         {/* Actions + Filters */}
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="tabs">
             {(
               [
-                { key: 'tous', label: 'Tous' },
                 { key: 'a_venir', label: 'À venir' },
                 { key: 'passes', label: 'Passés' },
+                { key: 'tous', label: 'Tous' },
               ] as const
             ).map((tab) => (
               <button
-                key={tab.key}
+                key={tab.key + tab.label}
                 className={`tab ${filter === tab.key ? 'active' : ''}`}
                 onClick={() => setFilter(tab.key)}
               >
@@ -149,13 +117,13 @@ const RendezVousPatient: React.FC = () => {
               </button>
             ))}
           </div>
+
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             <i className={`fas ${showForm ? 'fa-times' : 'fa-plus'}`}></i>
-            {showForm ? ' Fermer' : ' Nouveau rendez-vous'}
+            {showForm ? ' Fermer' : ' Prendre un rendez-vous'}
           </button>
         </div>
 
-        {/* Formulaire nouveau rendez-vous */}
         {showForm && (
           <div className="content-card-app mb-6">
             <h3 className="card-title">
@@ -232,74 +200,113 @@ const RendezVousPatient: React.FC = () => {
         )}
 
         {/* Liste des rendez-vous */}
-        <div className="space-y-4">
-          {filtered.map((rdv) => {
-            const config = STATUS_CONFIG[rdv.status];
-            const isPast = rdv.status === 'termine' || rdv.status === 'annule';
-            return (
-              <div
-                key={rdv.id}
-                className={`content-card-app ${isPast ? 'opacity-70' : ''}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="avatar avatar-md">
-                      <span>{rdv.avatar}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{rdv.medecinNom}</h4>
-                      <p className="text-sm text-gray-500">{rdv.specialite}</p>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
-                        <span>
-                          <i className="fas fa-calendar"></i>{' '}
-                          {new Date(rdv.date).toLocaleDateString('fr-FR')}
-                        </span>
-                        <span>
-                          <i className="fas fa-clock"></i> {rdv.heure}
-                        </span>
-                        <span>
-                          <i className="fas fa-map-marker-alt"></i> {rdv.lieu}
-                        </span>
-                      </div>
-                      <p className="text-sm mt-1">{rdv.motif}</p>
-                      {rdv.notes && (
-                        <p className="text-xs text-blue-500 mt-1">
-                          <i className="fas fa-sticky-note"></i> {rdv.notes}
-                        </p>
-                      )}
-                    </div>
+        <div className="content-card-app mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold">
+              <i className="fas fa-list-ul mr-2 text-teal-500"></i>
+              Liste des rendez-vous prévus
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {filtered.map((rdv) => {
+              const config = STATUS_CONFIG[rdv.status];
+              const isPast = rdv.status === 'termine' || rdv.status === 'annule';
+              const date = new Date(rdv.date);
+              const month = date.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase();
+              const day = String(date.getDate()).padStart(2, '0');
+
+              return (
+                <div
+                  key={rdv.id}
+                  className={`rendezvous-card ${isPast ? 'opacity-70' : ''}`}
+                >
+                  <div className="rendezvous-date">
+                    <div className="rendezvous-date-month">{month}</div>
+                    <div className="rendezvous-date-day">{day}</div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="badge badge-outline text-xs">{TYPE_LABELS[rdv.type]}</span>
+
+                  <div className="rendezvous-info">
+                    <h4 className="font-semibold">{rdv.medecinNom}</h4>
+                    <p className="text-sm text-gray-500">{rdv.specialite}</p>
+                    <div className="rendezvous-meta">
+                      <span>
+                        <i className="fas fa-clock mr-1"></i>
+                        {rdv.heure}
+                      </span>
+                      <span>
+                        <i className="fas fa-map-marker-alt mr-1"></i>
+                        {rdv.lieu}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">{rdv.motif}</p>
+                  </div>
+
+                  <div className="rendezvous-actions">
                     <span className={`badge ${config.badge}`}>
                       <i className={`${config.icon} mr-1`}></i>
                       {config.label}
                     </span>
-                    {!isPast && rdv.status !== 'en_cours' && (
-                      <button
-                        className="btn btn-outline btn-danger btn-sm"
-                        onClick={() => annuler.mutate(rdv.id)}
-                        disabled={annuler.isPending}
-                      >
-                        <i className="fas fa-times"></i>
-                      </button>
-                    )}
-                    {rdv.type === 'teleconsultation' && !isPast && (
-                      <button className="btn btn-primary btn-sm">
-                        <i className="fas fa-video"></i> Rejoindre
-                      </button>
-                    )}
+
+                    <button className="btn btn-outline btn-sm">
+                      <i className="fas fa-pen"></i>
+                    </button>
+                    <button className="btn btn-outline btn-sm">
+                      Détails
+                    </button>
                   </div>
                 </div>
+              );
+            })}
+
+            {filtered.length === 0 && (
+              <div className="content-card-app text-center py-8 text-gray-400">
+                <i className="fas fa-calendar-times text-4xl mb-3"></i>
+                <p>Aucun rendez-vous trouvé</p>
               </div>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div className="content-card-app text-center py-8 text-gray-400">
-              <i className="fas fa-calendar-times text-4xl mb-3"></i>
-              <p>Aucun rendez-vous trouvé</p>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+
+        {/* Historique récent */}
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <i className="fas fa-history text-teal-500"></i>
+              Historique récent
+            </h3>
+            <button className="link-action" onClick={() => setFilter('passes')}>Voir tout l'historique</button>
+          </div>
+          <div className="stock-table">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Spécialiste</th>
+                  <th>Type</th>
+                  <th>Statut</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentHistory.map((rdv) => (
+                  <tr key={rdv.id}>
+                    <td>{new Date(rdv.date).toLocaleDateString('fr-FR')}</td>
+                    <td>{rdv.medecinNom}</td>
+                    <td>{TYPE_LABELS[rdv.type]}</td>
+                    <td>
+                      <span className={`badge ${STATUS_CONFIG[rdv.status].badge}`}>
+                        {STATUS_CONFIG[rdv.status].label}
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      <button className="link-action">Détails</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
