@@ -3,7 +3,7 @@
 // ============================================================
 
 import type { HistoriqueAcces, DemandeAcces, ReponseDemandeAccesDTO } from '../types/patient.types';
-import type { AccesAutorisation } from '@features/dossier-medical/types/dossier.types';
+import type { AccesAutorisation } from '@features/doctor/types/dossier.types';
 // import { apiGet, apiPost, apiDelete } from '@core/api';
 
 export const gestionAccesService = {

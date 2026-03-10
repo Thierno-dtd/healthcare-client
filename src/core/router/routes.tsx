@@ -13,9 +13,9 @@ import Dashboard from '@features/dashboard/components/Dashboard';
 import Examens from '@features/examens/components/Examens';
 
 // Patient
-import { DossierMedical } from '@features/dossier-medical';
-import EtatSante from '@features/dossier-medical/components/EtatSante';
-import Medicaments from '@features/dossier-medical/components/Medicaments';
+import { DossierMedical } from '@features/doctor';
+import EtatSante from '@features/doctor/components/EtatSante';
+import Medicaments from '@features/doctor/components/Medicaments';
 import {
   GestionAcces,
   RendezVousPatient,
@@ -27,11 +27,12 @@ import AppelVideoPatient from '@features/patient/components/AppelVideoPatient';
 import JournalAchatPharmacie from '@features/patient/components/JournalAchatPharmacie';
 
 // Medecin
-import DossiersPatients from '@features/dossier-medical/components/DossiersPatients';
-import CasSpeciaux from '@features/dossier-medical/components/CasSpeciaux';
+import DossiersPatients from '@features/doctor/components/DossiersPatients';
+import PatientRecordPage from '@features/doctor/components/PatientRecord/PatientRecordPage';
+import CasSpeciaux from '@features/doctor/components/CasSpeciaux';
 import Ordonnances from '@features/ordonnances/components/Ordonnances';
 import { DiagnosticIA } from '@features/diagnostic';
-import AppelVideoMedecin from '@features/dossier-medical/components/AppelVideoMedecin';
+import AppelVideoMedecin from '@features/doctor/components/AppelVideoMedecin';
 
 // Pharmacien
 import ScanQR from '@features/pharmacie/components/ScanQR';
@@ -182,6 +183,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['medecin']}>
               <DossiersPatients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="medecin/patients/:patientId/*"
+          element={
+            <ProtectedRoute allowedRoles={['medecin']}>
+              <PatientRecordPage />
             </ProtectedRoute>
           }
         />

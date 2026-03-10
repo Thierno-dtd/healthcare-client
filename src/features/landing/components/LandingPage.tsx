@@ -140,7 +140,7 @@ const LandingPage: React.FC = () => {
       <section className="cta-section">
         <div className="container">
           <h2 className="fade-in">Prêt à transformer l'expérience des soins de santé ?</h2>
-          <p className="fade-in-delay-1">Rejoignez la révolution LAMESSE DAMA et bénéficiez d'une plateforme sécurisée, intuitive et collaborative.</p>
+          <p className="fade-in-delay-1">Rejoignez la révolution LAMESSE DAMA.</p>
           <div className="cta-buttons fade-in-delay-2">
             <button className="btn btn-secondary" onClick={() => navigate('/login')}>S'inscrire maintenant</button>
             <a href="#contact" className="btn btn-outline">Nous contacter</a>
@@ -174,7 +174,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           <div className="copyright">
-            <p>&copy; 2025 LAMESSE DAMA. Tous droits réservés. Application pour la compétition nationale de santé.</p>
+            <p>&copy; 2025 LAMESSE DAMA. Tous droits réservés.</p>
           </div>
         </div>
       </footer>

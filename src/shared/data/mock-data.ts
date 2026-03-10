@@ -8,6 +8,14 @@ import type {
 import type {
   Notification, Examen, Medicament, PatientSummary, Etablissement,
 } from '@shared/types/medical.types';
+import type {
+  PatientRecord,
+  ConsultationRecord,
+  HospitalisationRecord,
+  AnalyseRecord,
+  OrdonnanceRecord,
+  DepenseRecord,
+} from '@shared/types/patient-record.types';
 import type { DashboardCard, MenuConfig, MenuSection } from '@shared/types/common.types';
 
 export const MOCK_USERS: Record<string, User> = {
@@ -159,6 +167,150 @@ export const PATIENTS: PatientSummary[] = [
   { id: 'pat_001', nom: 'Martin Marie', age: 35, groupeSanguin: 'A+', dernierExamen: '2024-03-15', status: 'Stable', avatar: 'MM' },
   { id: 'pat_002', nom: 'Bernard Pierre', age: 52, groupeSanguin: 'O+', dernierExamen: '2024-03-12', status: 'Suivi requis', avatar: 'BP' },
   { id: 'pat_003', nom: 'Dubois Sophie', age: 28, groupeSanguin: 'B+', dernierExamen: '2024-03-10', status: 'Stable', avatar: 'SD' },
+];
+
+
+export const PATIENT_RECORDS: PatientRecord[] = [
+  {
+    id: 'pat_001',
+    nom: 'Martin',
+    prenom: 'Marie',
+    sexe: 'F',
+    age: 35,
+    dateNaissance: '1989-05-15',
+    groupeSanguin: 'A+',
+    telephone: '+228 91 11 22 33',
+    email: 'marie.martin@exemple.com',
+    adresse: 'Rue des Fleurs 12, Lomé',
+    numeroDossier: 'D001-2026',
+    securiteSociale: '1 89 05 75 123 456 78',
+    allergies: ['Pénicilline'],
+    antecedents: [
+      { id: 'ant_001', titre: 'Hypertension', date: '2019', description: 'Hypertension artérielle diagnostiquée en 2019.' },
+      { id: 'ant_002', titre: 'Appendicectomie', date: '2005', description: 'Chirurgie de l’appendice suite à une appendicite aiguë.' },
+    ],
+    timeline: [
+      { id: 't1', date: '2024-09-12', title: 'Consultation cardiologie', description: 'Suivi de l’hypertension, ajustement du traitement.', category: 'Consultation' },
+      { id: 't2', date: '2026-01-10', title: 'Hospitalisation cardiologique', description: 'Décompensation cardiaque, hospitalisation 5 jours.', category: 'Hospitalisation' },
+      { id: 't3', date: '2026-02-20', title: 'Consultation urgence', description: 'Douleurs thoraciques, bilan et ECG réalisés.', category: 'Consultation' },
+    ],
+  },
+  {
+    id: 'pat_002',
+    nom: 'Bernard',
+    prenom: 'Pierre',
+    sexe: 'M',
+    age: 52,
+    dateNaissance: '1972-02-18',
+    groupeSanguin: 'O+',
+    telephone: '+228 90 22 33 44',
+    email: 'pierre.bernard@exemple.com',
+    adresse: 'Avenue de la Santé 45, Lomé',
+    numeroDossier: 'D002-2026',
+    securiteSociale: '2 72 02 64 987 654 32',
+    allergies: [],
+    antecedents: [
+      { id: 'ant_003', titre: 'Diabète de type 2', date: '2021', description: 'Diabète diagnostiqué en 2021, suivi en cours.' },
+    ],
+    timeline: [
+      { id: 't4', date: '2025-07-15', title: 'Contrôle glycémique', description: 'Bilan annuel du diabète, ajustement des doses d’insuline.', category: 'Consultation' },
+      { id: 't5', date: '2026-03-10', title: 'Prise de sang', description: 'Analyse des marqueurs métaboliques.', category: 'Analyse' },
+    ],
+  },
+];
+
+export const CONSULTATIONS: ConsultationRecord[] = [
+  {
+    id: 'cons_001',
+    patientId: 'pat_001',
+    date: '2026-02-20',
+    heure: '10:30',
+    hopital: 'Hôpital Général',
+    medecin: 'Dr. Jean Dupont',
+    motif: 'Douleurs thoraciques',
+    diagnostic: 'Angine de poitrine',
+    typeArrivee: 'Urgence',
+    histoireMaladie: 'Douleurs intermittentes depuis 2 jours',
+    examenClinique: 'Tension élevée, rythme cardiaque irrégulier',
+    resumeSyndromique: 'Douleur constrictive du thorax',
+    conduiteATenir: 'Mise sous bêtabloquants, surveillance',
+    evolution: 'Amélioration après 24h',
+    antecedentsPersonnels: ['Hypertension', 'Chirurgie appendiculaire 2005'],
+    antecedentsFamiliaux: ['Diabète type 2 (mère)'],
+    hypothesesDiagnostiques: ['Syndrome coronarien', 'Angor stable'],
+    examensParacliniques: ['ECG', 'Bilan sanguin'],
+    traitementsHabituels: ['Amlodipine 5mg', 'Aspirine 75mg'],
+  },
+];
+
+export const HOSPITALISATIONS: HospitalisationRecord[] = [
+  {
+    id: 'hosp_001',
+    patientId: 'pat_001',
+    dateAdmission: '2026-01-10',
+    dateSortie: '2026-01-15',
+    duree: '5 jours',
+    chambre: '208B',
+    hopital: 'Clinique du Parc',
+    service: 'Cardiologie',
+    motif: 'Décompensation cardiaque',
+    diagnosticFinal: 'Insuffisance cardiaque congestive',
+    traitementSortie: 'Diurétiques + IEC',
+    bilanARealiser: 'Échographie cardiaque',
+    prochainRdv: '2026-02-05',
+    medecins: ['Dr. Jean Dupont', 'Dr. Claire Martin'],
+  },
+];
+
+export const ANALYSES: AnalyseRecord[] = [
+  {
+    id: 'ana_001',
+    patientId: 'pat_001',
+    date: '2026-02-05',
+    type: 'Prise de sang',
+    categorie: 'Biologie',
+    prescripteur: 'Dr. Jean Dupont',
+    statut: 'Normal',
+    resultats: 'Glycémie normale, cholestérol légèrement élevé',
+    interpretation: 'Suivi hygiéno-diététique recommandé',
+    valeursReference: 'Glycémie < 1.10 g/L, Cholestérol < 2 g/L',
+  },
+];
+
+export const ORDONNANCES_RECORD: OrdonnanceRecord[] = [
+  {
+    id: 'ord_001',
+    patientId: 'pat_001',
+    medecin: 'Dr. Jean Dupont',
+    date: '2026-02-20',
+    statut: 'Active',
+    medicaments: [
+      { nom: 'Aspirine', dosage: '75mg', forme: 'Comprimé', posologie: '1/j', duree: '30 jours' },
+      { nom: 'Atorvastatine', dosage: '20mg', forme: 'Comprimé', posologie: '1/j', duree: '30 jours' },
+    ],
+    instructions: 'Prendre après le repas du soir.',
+  },
+];
+
+export const DEPENSES: DepenseRecord[] = [
+  {
+    id: 'dep_001',
+    patientId: 'pat_001',
+    date: '2026-02-20',
+    montant: '12 000 XOF',
+    categorie: 'Consultation',
+    description: 'Consultation cardiologie',
+    payeur: 'Patient',
+  },
+  {
+    id: 'dep_002',
+    patientId: 'pat_001',
+    date: '2026-02-22',
+    montant: '8 500 XOF',
+    categorie: 'Laboratoire',
+    description: 'Analyse sanguine',
+    payeur: 'Assurance',
+  },
 ];
 
 // --- Établissements ---
