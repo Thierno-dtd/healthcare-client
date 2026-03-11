@@ -9,6 +9,7 @@ import '../styles/components.css';
 import '../styles/extended.css';
 import '../styles/examens.css';
 import '../styles/responsive.css';
+import '../styles/medical-components.css';
 
 import App from './App';
 

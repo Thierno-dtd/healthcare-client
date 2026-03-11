@@ -33,6 +33,7 @@ import CasSpeciaux from '@features/doctor/components/CasSpeciaux';
 import Ordonnances from '@features/ordonnances/components/Ordonnances';
 import { DiagnosticIA } from '@features/diagnostic';
 import AppelVideoMedecin from '@features/doctor/components/AppelVideoMedecin';
+import  NouvelleConsultation  from '@features/doctor/components/NewConsultation';
 
 // Pharmacien
 import ScanQR from '@features/pharmacie/components/ScanQR';
@@ -191,6 +192,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['medecin']}>
               <PatientRecordPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="medecin/nouvelle-consultation"
+          element={
+            <ProtectedRoute allowedRoles={['medecin']}>
+              <NouvelleConsultation />
             </ProtectedRoute>
           }
         />

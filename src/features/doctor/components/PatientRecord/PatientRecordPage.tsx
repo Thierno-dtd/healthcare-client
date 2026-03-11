@@ -1,6 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BedDouble, Beaker, ClipboardList, FileText, ListChecks, Stethoscope } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  BedDouble, 
+  Beaker, 
+  ClipboardList, 
+  FileText, 
+  ListChecks, 
+  Stethoscope, 
+  Plus,
+  AlertTriangle 
+} from 'lucide-react';
 
 import {
   PATIENT_RECORDS,
@@ -94,36 +104,35 @@ const PatientRecordPage: React.FC = () => {
     }
   }, [basePath, location.pathname, navigate]);
 
+  const handleCreateConsultation = () => {
+    // Navigation vers la page de création de consultation
+    navigate(`/medecin/nouvelle-consultation?patientId=${patientId}`);
+  };
+
   if (!patient) {
     return (
-      <div className="page-content">
-        <div className="content-header-app">
-          <div className="header-overlay">
-            <h1>Dossier patient</h1>
-            <p>Patient introuvable ou accès non autorisé.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
-        </div>
-
-        <div className="content-body">
-          <div className="content-card-app">
-            <div className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">Aucun dossier trouvé pour l’identifiant passé en paramètre.</p>
-              <button
-                type="button"
-                onClick={() => navigate('/medecin/patients')}
-                className="btn btn-primary w-max"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Retour à la liste
-              </button>
-            </div>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Patient introuvable</h2>
+          <p className="text-gray-600 mb-6">Aucun dossier trouvé pour l'identifiant passé en paramètre.</p>
+          <button
+            type="button"
+            onClick={() => navigate('/medecin/patients')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour à la liste
+          </button>
         </div>
       </div>
     );
   }
 
   const tabList: PatientRecordTab[] = [
-    { id: 'overview', label: 'Vue d’ensemble', icon: Stethoscope },
+    { id: 'overview', label: 'Vue d\'ensemble', icon: Stethoscope },
     { id: 'consultations', label: 'Consultations', icon: ClipboardList },
     { id: 'hospitalisations', label: 'Hospitalisations', icon: BedDouble },
     { id: 'analyses', label: 'Analyses', icon: Beaker },
@@ -138,107 +147,218 @@ const PatientRecordPage: React.FC = () => {
   };
 
   return (
-    <div className="page-content">
-      <div className="content-header-app">
-        <div
-          className="header-image"
-          style={{
-            background:
-              'linear-gradient(rgba(24, 160, 251, 0.85), rgba(37, 99, 235, 0.85)), url(https://images.unsplash.com/photo-1587502536263-1c373e29d671?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80)',
-            backgroundSize: 'cover',
-          }}
-        >
-          <div className="header-overlay">
-            <h1>Fiche patient</h1>
-            <p>Consultez les informations médicales et l'historique complet.</p>
-          </div>
-        </div>
+     <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div className="min-h-screen bg-gray-50">
+      {/* Header avec gradient */}
+      <div
+  style={{
+    background: 'linear-gradient(to right, #163344, #1e293b)',
+    borderRadius: '1rem',
+    padding: '2rem',
+    color: 'white',
+    position: 'relative',
+    overflow: 'hidden',
+  }}
+>
+  <div style={{ position: 'relative', zIndex: 10 }}>
+    
+    {/* Boutons */}
+    <div className="flex items-center justify-between mb-6">
+      <button
+        onClick={() => navigate('/medecin/patients')}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white font-medium"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Retour à la liste
+      </button>
+
+      <button
+        onClick={handleCreateConsultation}
+        className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg transition-colors text-white font-semibold shadow-lg shadow-green-500/30"
+      >
+        <Plus className="w-5 h-5" />
+        Créer une consultation
+      </button>
+    </div>
+
+    {/* Infos patient */}
+    <div className="flex items-center gap-6">
+      <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border-2 border-white/30">
+        {patient.prenom.slice(0, 1)}{patient.nom.slice(0, 1)}
       </div>
 
-      <div className="content-body">
-        <div className="alert alert-success">
-          <i className="fas fa-check-circle" />
-          Accès autorisé jusqu'au <strong>Illimité</strong> — Dossier médical complet
+      <div>
+        <h1 className="text-3xl font-bold mb-2">
+          {patient.prenom} {patient.nom}
+        </h1>
+
+        <div className="flex flex-wrap gap-4 text-white/90">
+          <span>
+            {patient.sexe === 'F' ? '👩 Féminin' : '👨 Masculin'}
+          </span>
+
+          <span>•</span>
+
+          <span>{patient.age} ans</span>
+
+          <span>•</span>
+
+          <span>Né(e) le {patient.dateNaissance}</span>
+
+          <span>•</span>
+
+          <span className="px-3 py-1 bg-white/20 rounded-full font-semibold">
+            Groupe {patient.groupeSanguin}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Icône décorative */}
+  <div
+    style={{
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      height: '100%',
+      width: '33%',
+      opacity: 0.1,
+      pointerEvents: 'none',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+    }}
+  >
+    <i
+      className="fas fa-file-medical"
+      style={{
+        fontSize: '180px',
+        marginRight: -10,
+        transform: 'rotate(12deg)',
+      }}
+    />
+  </div>
+</div>
+
+      {/* Bannière d'accès */}
+      <div
+          style={{
+            margin: '12px 16px 12px 16px',
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}
+        >
+          <i
+            className="fas fa-check-circle"
+            style={{
+              color: '#059669',
+              fontSize: 14,
+              marginTop: 2,
+              flexShrink: 0,
+            }}
+          />
+
+          <span
+            style={{
+              fontSize: 13,
+              color: '#065f46',
+              lineHeight: 1.5,
+            }}
+          >
+            Accès autorisé jusqu'au Illimité — Dossier médical complet
+          </span>
         </div>
 
-        <div className="content-card-app">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center text-2xl font-semibold text-foreground">
-                    {patient.prenom.slice(0, 1)}{patient.nom.slice(0, 1)}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-semibold text-foreground">
-                      {patient.prenom} {patient.nom}
-                    </h2>
-                    <div className="text-sm text-muted-foreground">
-                      {patient.sexe === 'F' ? 'Féminin' : 'Masculin'} · {patient.age} ans · Né(e) le {patient.dateNaissance}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Groupe sanguin : {patient.groupeSanguin}</div>
-                  </div>
-                </div>
+      {/* Contenu principal */}
+      <div className="max-w-7xl mx-auto px-6 py-8 ">
+        {/* Carte d'informations patient */}
+        <div className="content-card-app mb-6">
+  <h3 className="card-title flex items-center gap-2 mb-6">
+    <i className="fas fa-user-injured"></i> Informations du patient
+  </h3>
 
-                <div className="info-grid">
-                  <div className="info-card">
-                    <h4>Coordonnées</h4>
-                    <div className="info-item">
-                      <span className="label">Téléphone</span>
-                      <span className="value">{patient.telephone}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="label">Email</span>
-                      <span className="value">{patient.email}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="label">Adresse</span>
-                      <span className="value">{patient.adresse}</span>
-                    </div>
-                  </div>
+   <div className="grid grid-cols-3 divide-x divide-gray-200">
 
-                  <div className="info-card">
-                    <h4>Identifiants</h4>
-                    <div className="info-item">
-                      <span className="label">N° dossier</span>
-                      <span className="value">{patient.numeroDossier}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="label">Sécu</span>
-                      <span className="value">{patient.securiteSociale}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="label">Allergies</span>
-                      <span className="value">
-                        {patient.allergies.length ? (
-                          patient.allergies.join(' · ')
-                        ) : (
-                          'Aucune'
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    {/* Coordonnées */}
+    <div>
+      <h4 className="text-xs font-semibold text-gray-500 uppercase mb-4 tracking-wider">
+        Coordonnées
+      </h4>
 
-            <div>
-              <div className="info-card">
-                <h4 className="mb-3">Accès & statut</h4>
-                <div className="info-item">
-                  <span className="label">Type d’accès</span>
-                  <span className="value">Illimité</span>
-                </div>
-                <div className="info-item">
-                  <span className="label">Dernière consultation</span>
-                  <span className="value">{lastConsultation ? `${lastConsultation.date} à ${lastConsultation.heure}` : 'Aucune'}</span>
-                </div>
-              </div>
-            </div>
+      <div className="space-y-3">
+        <div>
+          <div className="text-xs text-gray-500 uppercase">Téléphone</div>
+          <div className="font-medium">{patient.telephone}</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-gray-500 uppercase">Email</div>
+          <div className="font-medium">{patient.email}</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-gray-500 uppercase">Adresse</div>
+          <div className="font-medium">{patient.adresse}</div>
+        </div>
+      </div>
+    </div>
+
+    {/* Identifiants */}
+    <div>
+      <h4 className="text-xs font-semibold text-gray-500 uppercase mb-4 tracking-wider">
+        Identifiants
+      </h4>
+
+      <div className="space-y-3">
+        <div>
+          <div className="text-xs text-gray-500 uppercase">N° dossier</div>
+          <div className="font-medium">{patient.numeroDossier}</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-gray-500 uppercase">Sécurité sociale</div>
+          <div className="font-medium">{patient.securiteSociale}</div>
+        </div>
+      </div>
+    </div>
+
+    {/* Informations médicales */}
+    <div>
+      <h4 className="text-xs font-semibold text-gray-500 uppercase mb-4 tracking-wider">
+        Informations médicales
+      </h4>
+
+      <div>
+        <div className="text-xs text-gray-500 uppercase mb-1">Allergies</div>
+
+        {patient.allergies?.length ? (
+          <div className="flex flex-wrap gap-2">
+            {patient.allergies.map((a, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full"
+              >
+                {a}
+              </span>
+            ))}
           </div>
-        </div>
+        ) : (
+          <span className="text-sm text-gray-600">Aucune</span>
+        )}
+      </div>
+    </div>
 
-        <div className="mt-6 rounded-2xl bg-white shadow-sm border border-gray-200">
+  </div>
+</div>
+
+        {/* Onglets et contenu */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <PatientRecordTabs tabs={tabList} activeTab={activeTab} setActiveTab={handleTabClick} />
 
           <div className="p-6">
@@ -280,6 +400,8 @@ const PatientRecordPage: React.FC = () => {
         </div>
       </div>
     </div>
+     </div>
+    
   );
 };
 

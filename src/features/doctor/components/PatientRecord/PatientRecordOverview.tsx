@@ -17,7 +17,7 @@ const PatientRecordOverview: React.FC<PatientRecordOverviewProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
         <div className="medical-card">
           <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
             <Stethoscope className="w-4 h-4 text-primary" /> Dernière consultation
