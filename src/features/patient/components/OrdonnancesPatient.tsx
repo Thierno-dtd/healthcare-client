@@ -1,530 +1,569 @@
-import React, { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '@core/auth/auth.store';
-import { useOrdonnancesPatient, useGenererQRCode } from '../hooks/useOrdonnancePatient';
-import type { OrdonnancePatient, OrdonnanceQRStatus } from '../types/patient.types';
-import type { PrescriptionStatus } from '@shared/types';
-import { JOURNAL_ACHATS_PHARMACIE } from '@shared/data/mock-data';
+import { useState } from "react";
+import { CONSULTATIONS, HOSPITALISATIONS } from "@shared/data/mock-data";
+import {
+  Pill, Eye, ArrowLeft, Calendar, User, Stethoscope, Building2, ShoppingCart,
+  CheckCircle, Clock, AlertCircle, Package, Search, Filter
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-type OrdonnanceFilter = 'toutes' | 'active' | 'utilisee' | 'expiree';
+/* ─── Types ─── */
+type PurchaseStatus = "Non achetés" | "Partiellement achetés" | "Tous achetés";
 
-const STATUS_CONFIG: Record<PrescriptionStatus, { label: string; badge: string }> = {
-  active: { label: 'Active', badge: 'badge-success' },
-  utilisee: { label: 'Utilisée', badge: 'badge-info' },
-  expiree: { label: 'Expirée', badge: 'badge-warning' },
-  annulee: { label: 'Annulée', badge: 'badge-danger' },
+interface MedicamentWithPurchase {
+  nom: string;
+  dosage: string;
+  forme: string;
+  posologie: string;
+  duree: string;
+  instructions: string;
+  achete: boolean;
+}
+
+interface PrescriptionData {
+  id: string;
+  medecin: string;
+  date: string;
+  contexte: "Consultation" | "Hospitalisation";
+  contextId: string;
+  medicaments: MedicamentWithPurchase[];
+}
+
+/* ─── Mock data ─── */
+const mockPrescriptions: PrescriptionData[] = [
+  {
+    id: "ORD001", medecin: "Dr. Martin Dupont", date: "05/03/2026", contexte: "Consultation", contextId: "C001",
+    medicaments: [
+      { nom: "Oméprazole", dosage: "20mg", forme: "Gélule", posologie: "1 gélule le matin à jeun", duree: "28 jours", instructions: "À prendre 30 min avant le petit-déjeuner", achete: true },
+      { nom: "Gaviscon", dosage: "500mg", forme: "Sachet", posologie: "1 sachet après les 3 repas", duree: "14 jours", instructions: "Bien agiter avant utilisation", achete: false },
+    ]
+  },
+  {
+    id: "ORD002", medecin: "Dr. Sophie Laurent", date: "15/01/2026", contexte: "Consultation", contextId: "C002",
+    medicaments: [
+      { nom: "Amlodipine", dosage: "5mg", forme: "Comprimé", posologie: "1 comprimé le matin", duree: "6 mois", instructions: "Ne pas interrompre sans avis médical", achete: true },
+    ]
+  },
+  {
+    id: "ORD003", medecin: "Dr. Martin Dupont", date: "20/09/2025", contexte: "Consultation", contextId: "C003",
+    medicaments: [
+      { nom: "Paracétamol", dosage: "1g", forme: "Comprimé", posologie: "1 comprimé toutes les 6h si fièvre", duree: "5 jours", instructions: "Ne pas dépasser 4g par jour", achete: true },
+      { nom: "Carbocistéine", dosage: "750mg", forme: "Sirop", posologie: "1 cuillère à soupe 3x/jour", duree: "7 jours", instructions: "À prendre après les repas", achete: true },
+    ]
+  },
+  {
+    id: "ORD004", medecin: "Dr. Jean Moreau", date: "16/06/2025", contexte: "Hospitalisation", contextId: "H001",
+    medicaments: [
+      { nom: "Paracétamol", dosage: "1g", forme: "Comprimé", posologie: "1 comprimé toutes les 6h", duree: "5 jours", instructions: "Si douleur", achete: false },
+      { nom: "Pantoprazole", dosage: "40mg", forme: "Comprimé", posologie: "1 comprimé le matin", duree: "14 jours", instructions: "À jeun", achete: false },
+    ]
+  },
+];
+
+/* ─── Helpers ─── */
+const getPurchaseStatus = (meds: MedicamentWithPurchase[]): PurchaseStatus => {
+  const bought = meds.filter((m) => m.achete).length;
+  if (bought === 0) return "Non achetés";
+  if (bought === meds.length) return "Tous achetés";
+  return "Partiellement achetés";
 };
 
-const QR_STATUS_CONFIG: Record<OrdonnanceQRStatus, { label: string; badge: string }> = {
-  valide: { label: 'QR valide', badge: 'badge-success' },
-  utilisee: { label: 'QR utilisé', badge: 'badge-info' },
-  expiree: { label: 'QR expiré', badge: 'badge-warning' },
+const STATUS_CFG: Record<PurchaseStatus, { color: string; bg: string; border: string; icon: React.ReactNode }> = {
+  "Non achetés":           { color: "#ef4444", bg: "#fef2f2", border: "#fecaca", icon: <AlertCircle size={11} /> },
+  "Partiellement achetés": { color: "#f59e0b", bg: "#fffbeb", border: "#fcd34d", icon: <Clock size={11} /> },
+  "Tous achetés":          { color: "#10b981", bg: "#ecfdf5", border: "#6ee7b7", icon: <CheckCircle size={11} /> },
 };
 
-const OrdonnancesPatient: React.FC = () => {
-  const user = useAuthStore((s) => s.user);
-  const { data: ordonnances, isLoading } = useOrdonnancesPatient(user?.id);
-  const genererQR = useGenererQRCode();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [filter, setFilter] = useState<OrdonnanceFilter>('toutes');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+/* ─── Shared styles ─── */
+const card: React.CSSProperties = {
+  backgroundColor: "white", borderRadius: "1rem",
+  border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden",
+};
 
-  const view = searchParams.get('view');
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "0.5625rem 0.875rem",
+  border: "1px solid #e2e8f0", borderRadius: "0.625rem",
+  fontSize: "0.875rem", background: "#f8fafc", color: "#374151",
+  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+};
 
-  const filtered = useMemo(
-    () => ordonnances?.filter((o) => filter === 'toutes' || o.status === filter) ?? [],
-    [ordonnances, filter],
-  );
-
-  const activeOrdonnances = useMemo(
-    () => ordonnances?.filter((o) => o.status === 'active') ?? [],
-    [ordonnances],
-  );
-
-  const recentHistory = useMemo(() => {
-    if (!ordonnances) return [];
-    return [...ordonnances]
-      .sort((a, b) => new Date(b.dateCreation).getTime() - new Date(a.dateCreation).getTime())
-      .slice(0, 3);
-  }, [ordonnances]);
-
-  const isFullView = view === 'all';
-
-  const latestPurchases = useMemo(() => {
-    return JOURNAL_ACHATS_PHARMACIE.slice(0, 3).map((item) => ({
-      ...item,
-      date: new Date(item.date).toLocaleDateString('fr-FR'),
-    }));
-  }, []);
-
-  const toggleExpand = (id: string) => {
-    setExpandedId((current) => (current === id ? null : id));
-  };
-
-  const openFullView = () => {
-    setSearchParams({ view: 'all' });
-  };
-
-  const closeFullView = () => {
-    setSearchParams({});
-  };
-
-  if (isLoading) {
-    return (
-      <div className="page-content">
-        <div className="content-body text-center py-12">
-          <i className="fas fa-spinner fa-spin text-2xl"></i>
-          <p className="mt-4">Chargement de vos ordonnances...</p>
-        </div>
-      </div>
-    );
-  }
-
+/* ─── StatusBadge ─── */
+const StatusBadge = ({ status }: { status: PurchaseStatus }) => {
+  const cfg = STATUS_CFG[status];
   return (
-    <div className="page-content">
-      <div className="content-header-app">
-        <div
-          className="header-image"
-          style={{
-            background:
-              'linear-gradient(to right, rgba(16, 185, 129, 0.85), rgba(20, 184, 166, 0.85)), url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="header-overlay">
-            <h1>Mes ordonnances</h1>
-            <p>Consultez vos prescriptions et générez vos QR codes en un clic.</p>
-          </div>
-        </div>
-      </div>
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "3px 10px", borderRadius: "9999px", fontSize: "0.6875rem", fontWeight: 700,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, flexShrink: 0,
+    }}>
+      {cfg.icon} {status}
+    </span>
+  );
+};
 
-      <div className="content-body">
-        {isFullView ? (
-          <>
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-2xl font-semibold">Toutes mes ordonnances</h2>
-                <p className="text-gray-500">Filtrez, consultez et gérez toutes vos prescriptions.</p>
+/* ─── Progress bar ─── */
+const ProgressBar = ({ bought, total }: { bought: number; total: number }) => (
+  <div style={{ width: "100%", background: "#e2e8f0", borderRadius: "9999px", height: 6 }}>
+    <div style={{
+      height: 6, borderRadius: "9999px", background: "#10b981",
+      width: `${(bought / total) * 100}%`, transition: "width 0.3s",
+    }} />
+  </div>
+);
+
+/* ════════════════════════════════════════════
+   MAIN COMPONENT
+════════════════════════════════════════════ */
+const OrdonnancesPatient = () => {
+  const [prescriptions, setPrescriptions] = useState<PrescriptionData[]>(mockPrescriptions);
+  const [selected, setSelected]           = useState<PrescriptionData | null>(null);
+  const [filterStatus, setFilterStatus]   = useState("all");
+  const [searchQuery, setSearchQuery]     = useState("");
+  const [hoveredId, setHoveredId]         = useState<string | null>(null);
+
+  const filtered = prescriptions.filter((p) => {
+    const status = getPurchaseStatus(p.medicaments);
+    const matchStatus = filterStatus === "all" || status === filterStatus;
+    const matchSearch =
+      p.medecin.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.medicaments.some((m) => m.nom.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchStatus && matchSearch;
+  });
+
+  const toggleMedPurchase = (prescId: string, medIndex: number) => {
+    const update = (p: PrescriptionData) => {
+      if (p.id !== prescId) return p;
+      const meds = [...p.medicaments];
+      meds[medIndex] = { ...meds[medIndex], achete: !meds[medIndex].achete };
+      return { ...p, medicaments: meds };
+    };
+    setPrescriptions((prev) => prev.map(update));
+    setSelected((prev) => (prev ? update(prev) : null));
+  };
+
+  const markAllPurchased = (prescId: string) => {
+    const update = (p: PrescriptionData) =>
+      p.id === prescId ? { ...p, medicaments: p.medicaments.map((m) => ({ ...m, achete: true })) } : p;
+    setPrescriptions((prev) => prev.map(update));
+    setSelected((prev) => (prev ? update(prev) : null));
+  };
+
+  const getContextLabel = (p: PrescriptionData) => {
+    if (p.contexte === "Consultation") {
+      const c = CONSULTATIONS.find((c) => c.id === p.contextId);
+      return c ? `${c.motif} (${c.date})` : "Consultation";
+    }
+    const h = HOSPITALISATIONS.find((h) => h.id === p.contextId);
+    return h ? `${h.motif} (${h.dateAdmission})` : "Hospitalisation";
+  };
+
+  const stats = [
+    { label: "Total",            value: prescriptions.length,                                                                     color: "#163344", bg: "#f1f5f9" },
+    { label: "Tous achetés",     value: prescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Tous achetés").length,  color: "#10b981", bg: "#ecfdf5" },
+    { label: "Partiellement",    value: prescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Partiellement achetés").length, color: "#f59e0b", bg: "#fffbeb" },
+    { label: "Non achetés",      value: prescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Non achetés").length,   color: "#ef4444", bg: "#fef2f2" },
+  ];
+
+  /* ════ DETAIL VIEW ════ */
+  if (selected) {
+    const status     = getPurchaseStatus(selected.medicaments);
+    const boughtCount = selected.medicaments.filter((m) => m.achete).length;
+
+    return (
+      <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+        {/* Back */}
+        <button onClick={() => setSelected(null)} style={{
+          display: "flex", alignItems: "center", gap: 6, fontSize: "0.875rem",
+          fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0,
+        }}>
+          <ArrowLeft size={16} /> Retour aux ordonnances
+        </button>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "1.5rem" }} className="presc-detail-grid">
+
+          {/* ── Left column ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+            {/* Header card */}
+            <div style={card}>
+              <div style={{
+                padding: "1.5rem",
+                background: "linear-gradient(135deg, #f0fdf4, #dcfce7)",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: "0.875rem", flexShrink: 0,
+                    background: "#163344", display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }}>
+                    <Pill size={24} color="white" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "#1f2937" }}>
+                      Ordonnance du {selected.date}
+                    </div>
+                    <div style={{ fontSize: "0.8125rem", color: "#64748b", marginTop: 3 }}>{selected.medecin}</div>
+                  </div>
+                </div>
+                <StatusBadge status={status} />
               </div>
-              <button className="btn btn-secondary" onClick={closeFullView}>
-                Retour
-              </button>
-            </div>
-
-            <div className="tabs-container">
-              <div className="tabs">
-                {(
-                  [
-                    { key: 'toutes', label: 'Toutes' },
-                    { key: 'active', label: 'Actives' },
-                    { key: 'utilisee', label: 'Utilisées' },
-                    { key: 'expiree', label: 'Expirées' },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.key}
-                    className={`tab ${filter === tab.key ? 'active' : ''}`}
-                    onClick={() => setFilter(tab.key)}
-                  >
-                    {tab.label}
-                  </button>
+              <div style={{ padding: "1.25rem 1.5rem", display: "flex", gap: "2.5rem", flexWrap: "wrap" }}>
+                {[
+                  { icon: <Calendar size={14} color="#94a3b8" />, label: "Date",          value: selected.date },
+                  { icon: <User size={14} color="#94a3b8" />,     label: "Médecin",       value: selected.medecin },
+                  { icon: <Package size={14} color="#94a3b8" />,  label: "Médicaments",   value: `${boughtCount}/${selected.medicaments.length} achetés` },
+                ].map((f) => (
+                  <div key={f.label} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ marginTop: 2 }}>{f.icon}</div>
+                    <div>
+                      <div style={{ fontSize: "0.6875rem", color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</div>
+                      <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1f2937", marginTop: 2 }}>{f.value}</div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className="content-grid content-grid--2-1">
-              <div>
-                <div className="content-card-app">
-                  <div className="card-header">
-                    <div className="card-header-content">
-                      <div className="card-icon">
-                        <i className="fas fa-file-medical"></i>
-                      </div>
-                      <div>
-                        <h3>Vos ordonnances</h3>
-                        <p className="text-gray-500">Cliquez sur une ordonnance pour voir les détails.</p>
-                      </div>
-                    </div>
-                    <div className="card-actions">
-                      <button
-                        className="card-btn"
-                        onClick={() => {
-                          if (!filtered.length) return;
-                          genererQR.mutate(filtered[0].id);
-                        }}
-                        disabled={!filtered.length || genererQR.isPending}
-                      >
-                        <i className={`fas ${genererQR.isPending ? 'fa-spinner fa-spin' : 'fa-qrcode'}`}></i>
-                        &nbsp;Générer QR
-                      </button>
-                    </div>
-                  </div>
-
-                  {filtered.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <i className="fas fa-prescription text-2xl mb-3"></i>
-                      <p>Aucune ordonnance trouvée.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {filtered.map((ord) => (
-                        <OrdonnanceCard
-                          key={ord.id}
-                          ordonnance={ord}
-                          expanded={expandedId === ord.id}
-                          onToggle={() => toggleExpand(ord.id)}
-                          onGenererQR={() => genererQR.mutate(ord.id)}
-                          isGeneratingQR={genererQR.isPending}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+            {/* Context card */}
+            <div style={card}>
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>
+                Contexte médical
               </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div className="content-card-app">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Historique des ordonnances</h3>
-                      <p className="text-gray-500">Dernières ordonnances enregistrées.</p>
+              <div style={{ padding: "1.25rem 1.5rem" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "0.75rem",
+                  padding: "0.875rem 1rem", background: "#f8fafc", borderRadius: "0.75rem",
+                  border: "1px solid #e2e8f0",
+                }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "0.5rem", flexShrink: 0, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {selected.contexte === "Consultation"
+                      ? <Stethoscope size={16} color="#3b82f6" />
+                      : <Building2 size={16} color="#3b82f6" />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {getContextLabel(selected)}
                     </div>
-                    <button type="button" className="link-action" onClick={openFullView}>
-                      Tout voir
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {recentHistory.length === 0 && <p className="text-gray-500">Aucune ordonnance récente.</p>}
-                    {recentHistory.map((ord) => {
-                      const statusCfg = STATUS_CONFIG[ord.status];
-                      return (
-                        <div key={ord.id} className="flex items-start justify-between gap-4 p-4 rounded-xl border border-gray-200">
-                          <div>
-                            <p className="font-semibold">{ord.medecinNom}</p>
-                            <p className="text-sm text-gray-500">{ord.specialite} • {new Date(ord.dateCreation).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className={`badge ${statusCfg.badge}`}>{statusCfg.label}</span>
-                            <button type="button" className="link-action" onClick={openFullView}>
-                              Détails <i className="fas fa-external-link-alt text-xs"></i>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="content-card-app">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Journaux d'achats pharmacie</h3>
-                      <p className="text-gray-500">Dernières transactions en pharmacie.</p>
-                    </div>
-                    <button type="button" className="link-action" onClick={() => navigate('/patient/ordonnances/journaux')}>
-                      Tout voir
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {latestPurchases.length === 0 && <p className="text-gray-500">Aucun achat récent.</p>}
-                    {latestPurchases.map((purchase) => (
-                      <div key={purchase.id} className="examen-item">
-                        <div className="examen-icon">
-                          <i className="fas fa-store"></i>
-                        </div>
-                        <div className="examen-info">
-                          <h4>{purchase.pharmacie}</h4>
-                          <p className="text-sm text-gray-500">{purchase.date}</p>
-                          <p className="text-sm text-gray-500">{purchase.note}</p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {purchase.items.map((item) => (
-                              <span key={item} className="badge badge-info">
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                    <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{selected.contexte}</div>
                   </div>
                 </div>
               </div>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-2xl font-semibold">Ordonnances actives</h2>
-                <p className="text-gray-500">Suivez vos prescriptions en cours et générez un QR code.</p>
+
+            {/* Medications card */}
+            <div style={card}>
+              <div style={{
+                padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>
+                  Médicaments ({selected.medicaments.length})
+                </div>
+                {status !== "Tous achetés" && (
+                  <button onClick={() => markAllPurchased(selected.id)} style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "6px 14px", borderRadius: "0.625rem",
+                    border: "1px solid #e2e8f0", background: "white",
+                    color: "#374151", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <ShoppingCart size={13} /> Tout marquer acheté
+                  </button>
+                )}
               </div>
-              <button type="button" className="link-action" onClick={openFullView}>
-                Tout voir
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {activeOrdonnances.slice(0, 3).map((ord) => (
-                <div key={ord.id} className="content-card-app">
-                  <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <i className="fas fa-user-md"></i>
-                      </div>
-                      <div>
-                        <p className="font-semibold">{ord.medecinNom}</p>
-                        <p className="text-sm text-gray-500">{ord.specialite} • Délivrée le {new Date(ord.dateCreation).toLocaleDateString('fr-FR')}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => genererQR.mutate(ord.id)}
-                        disabled={genererQR.isPending}
-                      >
-                        <i className={`fas ${genererQR.isPending ? 'fa-spinner fa-spin' : 'fa-qrcode'}`}></i>
-                        &nbsp;Générer QR Code
-                      </button>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => {
-                          // TODO: Télécharger ou ouvrir QR code si disponible
+              <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {selected.medicaments.map((med, i) => (
+                  <div key={i} style={{
+                    padding: "1rem 1.25rem", borderRadius: "0.875rem",
+                    border: `1.5px solid ${med.achete ? "#6ee7b7" : "#e2e8f0"}`,
+                    background: med.achete ? "#f0fdf4" : "white",
+                    transition: "all 0.2s",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem" }}>
+                      {/* Custom checkbox */}
+                      <div
+                        onClick={() => toggleMedPurchase(selected.id, i)}
+                        style={{
+                          width: 20, height: 20, borderRadius: "0.375rem", flexShrink: 0, marginTop: 2,
+                          border: `2px solid ${med.achete ? "#10b981" : "#d1d5db"}`,
+                          background: med.achete ? "#10b981" : "white",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer", transition: "all 0.15s",
                         }}
                       >
-                        <i className="fas fa-download"></i>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="stock-table overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr>
-                          <th>Médicament</th>
-                          <th>Posologie</th>
-                          <th>Durée</th>
-                          <th className="text-right">Acheté</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ord.medicaments.map((med) => (
-                          <tr key={med.id}>
-                            <td>
-                              <div className="font-semibold">{med.nom}</div>
-                              <div className="text-sm text-gray-500">{med.dosage}</div>
-                            </td>
-                            <td className="text-sm">{med.frequence}</td>
-                            <td className="text-sm">{med.duree}</td>
-                            <td className="text-right">
-                              <input
-                                type="checkbox"
-                                checked={med.pris}
-                                readOnly
-                                className="h-4 w-4 text-green-600"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="content-card-app">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Historique des ordonnances</h3>
-                      <p className="text-gray-500">Les 3 dernières ordonnances enregistrées.</p>
-                    </div>
-                    <button className="btn btn-outline btn-sm" onClick={openFullView}>
-                      Tout voir
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {recentHistory.length === 0 && <p className="text-gray-500">Aucune ordonnance récente.</p>}
-                    {recentHistory.map((ord) => {
-                      const statusCfg = STATUS_CONFIG[ord.status];
-                      return (
-                        <div key={ord.id} className="flex items-start justify-between gap-4 p-4 rounded-xl border border-gray-200">
-                          <div>
-                            <p className="font-semibold">{ord.medecinNom}</p>
-                            <p className="text-sm text-gray-500">{ord.specialite} • {new Date(ord.dateCreation).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className={`badge ${statusCfg.badge}`}>{statusCfg.label}</span>
-                            <button className="btn btn-outline btn-sm" onClick={openFullView}>
-                              Détails <i className="fas fa-external-link-alt text-xs"></i>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="content-card-app">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Journaux d'achats pharmacie</h3>
-                      <p className="text-gray-500">Les 3 derniers achats en pharmacie.</p>
-                    </div>
-                    <button className="btn btn-outline btn-sm" onClick={() => navigate('/patient/ordonnances/journaux')}>
-                      Tout voir
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {latestPurchases.length === 0 && <p className="text-gray-500">Aucun achat récent.</p>}
-                    {latestPurchases.map((purchase) => (
-                      <div key={purchase.id} className="examen-item">
-                        <div className="examen-icon">
-                          <i className="fas fa-store"></i>
-                        </div>
-                        <div className="examen-info">
-                          <h4>{purchase.pharmacie}</h4>
-                          <p className="text-sm text-gray-500">{purchase.date}</p>
-                          <p className="text-sm text-gray-500">{purchase.note}</p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {purchase.items.map((item) => (
-                              <span key={item} className="badge badge-info">
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
+                        {med.achete && <CheckCircle size={12} color="white" />}
                       </div>
-                    ))}
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Name + badges */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", marginBottom: 8 }}>
+                          <span style={{
+                            fontSize: "0.9375rem", fontWeight: 700,
+                            color: med.achete ? "#94a3b8" : "#1f2937",
+                            textDecoration: med.achete ? "line-through" : "none",
+                          }}>
+                            {med.nom}
+                          </span>
+                          <span style={{ padding: "2px 8px", borderRadius: "9999px", fontSize: "0.6875rem", fontWeight: 700, background: "#f1f5f9", color: "#475569" }}>
+                            {med.dosage}
+                          </span>
+                          <span style={{ padding: "2px 8px", borderRadius: "9999px", fontSize: "0.6875rem", fontWeight: 600, background: "white", color: "#64748b", border: "1px solid #e2e8f0" }}>
+                            {med.forme}
+                          </span>
+                        </div>
+
+                        {/* Details grid */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 1.5rem", marginBottom: 8 }}>
+                          <div style={{ fontSize: "0.8125rem" }}>
+                            <span style={{ color: "#94a3b8" }}>Posologie : </span>
+                            <span style={{ color: "#374151", fontWeight: 500 }}>{med.posologie}</span>
+                          </div>
+                          <div style={{ fontSize: "0.8125rem" }}>
+                            <span style={{ color: "#94a3b8" }}>Durée : </span>
+                            <span style={{ color: "#374151", fontWeight: 500 }}>{med.duree}</span>
+                          </div>
+                        </div>
+
+                        {/* Instructions */}
+                        {med.instructions && (
+                          <div style={{
+                            display: "flex", alignItems: "flex-start", gap: 6,
+                            fontSize: "0.75rem", color: "#64748b", fontStyle: "italic",
+                            background: "#f8fafc", borderRadius: "0.5rem", padding: "6px 10px",
+                          }}>
+                            <AlertCircle size={12} style={{ flexShrink: 0, marginTop: 1, color: "#94a3b8" }} />
+                            {med.instructions}
+                          </div>
+                        )}
+                      </div>
+
+                      {med.achete && <CheckCircle size={20} color="#10b981" style={{ flexShrink: 0, marginTop: 2 }} />}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right sidebar ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <div style={card}>
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>
+                Suivi des achats
+              </div>
+              <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
+                  <span style={{ color: "#64748b" }}>Achetés</span>
+                  <span style={{ fontWeight: 800, color: "#10b981" }}>{boughtCount}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
+                  <span style={{ color: "#64748b" }}>Restants</span>
+                  <span style={{ fontWeight: 800, color: "#f59e0b" }}>{selected.medicaments.length - boughtCount}</span>
+                </div>
+                <ProgressBar bought={boughtCount} total={selected.medicaments.length} />
+                <div style={{ textAlign: "center", fontSize: "0.75rem", color: "#94a3b8" }}>
+                  {Math.round((boughtCount / selected.medicaments.length) * 100)}% complété
                 </div>
               </div>
             </div>
-          </>
-        )}
+
+            {/* Quick tip */}
+            <div style={{
+              ...card, padding: "1.25rem", background: "#163344", border: "none",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <Pill size={16} color="#10b981" />
+                <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "white" }}>Rappel</span>
+              </div>
+              <p style={{ fontSize: "0.8125rem", color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
+                Cochez les médicaments au fur et à mesure de vos achats en pharmacie.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <style>{`@media (max-width: 900px) { .presc-detail-grid { grid-template-columns: 1fr !important; } }`}</style>
       </div>
-    </div>
-  );
-};
+    );
+  }
 
-interface OrdonnanceCardProps {
-  ordonnance: OrdonnancePatient;
-  expanded: boolean;
-  onToggle: () => void;
-  onGenererQR: () => void;
-  isGeneratingQR: boolean;
-}
-
-const OrdonnanceCard: React.FC<OrdonnanceCardProps> = ({
-  ordonnance: ord,
-  expanded,
-  onToggle,
-  onGenererQR,
-  isGeneratingQR,
-}) => {
-  const statusCfg = STATUS_CONFIG[ord.status];
-  const qrCfg = QR_STATUS_CONFIG[ord.qrStatus];
-
+  /* ════ LIST VIEW ════ */
   return (
-    <div className="content-card-app card-interactive" onClick={onToggle}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="font-semibold">{ord.medecinNom}</h4>
-          <p className="text-sm text-gray-500">{ord.specialite}</p>
-          <div className="text-xs text-gray-500 mt-1">
-            <span>
-              <i className="fas fa-calendar"></i>{' '}
-              {new Date(ord.dateCreation).toLocaleDateString('fr-FR')}
-            </span>
-            {' • '}
-            <span>
-              Expire le {new Date(ord.dateExpiration).toLocaleDateString('fr-FR')}
-            </span>
-          </div>
-        </div>
+    <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "2rem" }}>
 
-        <div className="flex items-center gap-2">
-          <span className={`badge ${statusCfg.badge}`}>{statusCfg.label}</span>
-          <span className="badge badge-medical">{ord.medicaments.length} méd.</span>
-          <i className={`fas fa-chevron-${expanded ? 'up' : 'down'} text-gray-500`}></i>
+      {/* ─── Hero Banner ─── */}
+      <div style={{
+        background: "linear-gradient(135deg, #163344 0%, #1e4060 60%, #163344 100%)",
+        borderRadius: "1rem", padding: "2rem", color: "white",
+        position: "relative", overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
+      }}>
+        <div style={{ position: "absolute", right: -30, top: -30, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "0.75rem", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Pill size={20} color="white" />
+            </div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>Mes Ordonnances</div>
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: "0.875rem" }}>
+            Suivez vos prescriptions et gérez vos achats en pharmacie
+          </div>
         </div>
       </div>
 
-      {expanded && (
-        <div className="mt-4 pt-4" style={{ borderTop: '1px solid #e5e7eb' }}>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className={`badge ${qrCfg.badge}`}>{qrCfg.label}</span>
-            <span className="badge badge-medical">{ord.qrStatus}</span>
+      {/* ─── Stats ─── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{ ...card, padding: "1.25rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+            <div style={{
+              width: 46, height: 46, borderRadius: "0.75rem", flexShrink: 0,
+              background: s.bg, color: s.color,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.25rem", fontWeight: 800,
+            }}>{s.value}</div>
+            <div style={{ fontSize: "0.8125rem", color: "#64748b", fontWeight: 500 }}>{s.label}</div>
           </div>
+        ))}
+      </div>
 
-          {ord.notes && (
-            <p className="text-sm text-gray-600 mb-4">
-              <i className="fas fa-sticky-note text-gray-500"></i> {ord.notes}
-            </p>
-          )}
-
-          <div className="space-y-2">
-            {ord.medicaments.map((med) => (
-              <div
-                key={med.id}
-                className={`medicament-item ${med.pris ? 'medicament-item--taken' : ''}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h5 className="font-medium">
-                      {med.nom} - {med.dosage}
-                    </h5>
-                    <p className="text-sm text-gray-500">
-                      {med.frequence} • {med.duree}
-                    </p>
-                    {med.instructions && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        <i className="fas fa-info-circle"></i> {med.instructions}
-                      </p>
-                    )}
-                  </div>
-                  {med.pris && (
-                    <span className="badge badge-success">
-                      <i className="fas fa-check"></i> Pris
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+      {/* ─── Filters ─── */}
+      <div style={{ ...card, padding: "1rem 1.5rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+            <Search size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher par médecin ou médicament..."
+              style={{ ...inputStyle, paddingLeft: "2.25rem" }}
+            />
           </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Filter size={14} color="#94a3b8" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{ ...inputStyle, width: "auto", paddingRight: "2rem" }}
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="Non achetés">Non achetés</option>
+              <option value="Partiellement achetés">Partiellement achetés</option>
+              <option value="Tous achetés">Tous achetés</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-          {ord.status === 'active' && (
-            <div className="flex flex-wrap gap-3 mt-4">
-              <button
-                className="btn btn-primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onGenererQR();
-                }}
-                disabled={isGeneratingQR}
+      {/* ─── Prescription list ─── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <AnimatePresence>
+          {filtered.map((presc, i) => {
+            const status      = getPurchaseStatus(presc.medicaments);
+            const boughtCount = presc.medicaments.filter((m) => m.achete).length;
+            const isHov       = hoveredId === presc.id;
+
+            return (
+              <motion.div key={presc.id}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }} transition={{ delay: i * 0.03 }}
               >
-                <i className={`fas ${isGeneratingQR ? 'fa-spinner fa-spin' : 'fa-qrcode'}`}></i>{' '}
-                Générer QR
-              </button>
-              {ord.qrCode && (
-                <button
-                  className="btn btn-outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // TODO: Implémenter le téléchargement du QR si disponible
+                <div
+                  onClick={() => setSelected(presc)}
+                  onMouseEnter={() => setHoveredId(presc.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  style={{
+                    ...card,
+                    cursor: "pointer", padding: "1.25rem",
+                    border: `1.5px solid ${isHov ? "#163344" : "#e2e8f0"}`,
+                    boxShadow: isHov ? "0 4px 16px rgba(22,51,68,0.1)" : "0 1px 3px rgba(0,0,0,0.04)",
+                    transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: "1rem",
                   }}
                 >
-                  <i className="fas fa-download"></i> Télécharger
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                  {/* Icon */}
+                  <div style={{
+                    width: 48, height: 48, borderRadius: "0.75rem", flexShrink: 0,
+                    background: isHov ? "#163344" : "#f1f5f9",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 0.15s",
+                  }}>
+                    <Pill size={22} color={isHov ? "white" : "#163344"} />
+                  </div>
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem", marginBottom: 6 }}>
+                      <div style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#1f2937" }}>
+                        Ordonnance du {presc.date}
+                      </div>
+                      <StatusBadge status={status} />
+                    </div>
+
+                    <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap", marginBottom: 10 }}>
+                      {[
+                        { icon: <User size={11} />,       text: presc.medecin },
+                        { icon: <Package size={11} />,    text: `${presc.medicaments.length} médicament${presc.medicaments.length > 1 ? "s" : ""}` },
+                        { icon: <ShoppingCart size={11} />, text: `${boughtCount}/${presc.medicaments.length} achetés` },
+                      ].map((m, mi) => (
+                        <span key={mi} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.75rem", color: "#64748b" }}>
+                          <span style={{ color: "#94a3b8" }}>{m.icon}</span> {m.text}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Context badge + progress */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "2px 10px", borderRadius: "9999px",
+                        background: "#f1f5f9", color: "#475569", fontSize: "0.6875rem", fontWeight: 600,
+                      }}>
+                        {presc.contexte === "Consultation" ? <Stethoscope size={10} /> : <Building2 size={10} />}
+                        {presc.contexte}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 80, background: "#e2e8f0", borderRadius: "9999px", height: 5 }}>
+                          <div style={{
+                            height: 5, borderRadius: "9999px", background: "#10b981",
+                            width: `${(boughtCount / presc.medicaments.length) * 100}%`,
+                            transition: "width 0.3s",
+                          }} />
+                        </div>
+                        <span style={{ fontSize: "0.6875rem", color: "#94a3b8", fontWeight: 600 }}>
+                          {Math.round((boughtCount / presc.medicaments.length) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelected(presc); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
+                      padding: "6px 14px", borderRadius: "0.5rem",
+                      border: "1px solid #e2e8f0", background: "white",
+                      color: "#374151", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                    }}
+                  >
+                    <Eye size={13} /> Détails
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "4rem 1.5rem", color: "#94a3b8" }}>
+            <Pill size={40} style={{ margin: "0 auto 12px", display: "block", opacity: 0.3 }} />
+            <div style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 4 }}>Aucune ordonnance trouvée</div>
+            <div style={{ fontSize: "0.8125rem" }}>Modifiez vos filtres de recherche</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

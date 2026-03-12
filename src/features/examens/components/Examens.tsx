@@ -1,781 +1,739 @@
-import React, { useState, useEffect } from 'react';
-import { useAuthStore } from '@core/auth/auth.store';
+import { useState } from "react";
+import { CONSULTATIONS, HOSPITALISATIONS } from "@shared/data/mock-data";
+import {
+  TestTube, Plus, Eye, FileText, Calendar, MapPin, Clock, Stethoscope, Building2,
+  Upload, CheckCircle, XCircle, AlertTriangle, ArrowLeft, Image as ImageIcon,
+  Download, Search, Filter, X
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface PatientInfo {
-  id: string;
-  nom: string;
-  avatar: string;
-  telephone: string;
+/* ─── Types ─── */
+type ExamStatus = "Planifié" | "Confirmé" | "Reporté" | "Réalisé" | "Non réalisé";
+type ExamContext = "Consultation" | "Hospitalisation";
+
+interface ExamResult {
+  dateResultat: string;
+  commentaireMedecin: string;
+  interpretation: string;
+  fichiers: { nom: string; type: "pdf" | "image" }[];
 }
 
-interface MedecinInfo {
+interface Exam {
   id: string;
   nom: string;
-  specialite: string;
-}
-
-interface RendezVous {
-  id: string;
-  patient: PatientInfo;
-  medecin: MedecinInfo;
   date: string;
-  heure: string;
-  duree: number;
-  type: string;
-  motif: string;
-  statut: string;
   lieu: string;
-  notes: string;
-  rappelEnvoye: boolean;
-  creeLe: string;
+  statut: ExamStatus;
+  dureeEstimee: string;
+  contexte: ExamContext;
+  contextId: string;
+  resultat?: ExamResult;
 }
 
-interface FormDataState {
-  patient: string;
-  motif: string;
-  dateRdv: string;
-  heureRdv: string;
-  duree: string;
-  type: string;
-  lieu: string;
-  notes: string;
-  rappel: boolean;
-}
+/* ─── Mock data ─── */
+const mockExams: Exam[] = [
+  {
+    id: "EX001", nom: "NFS (Numération Formule Sanguine)", date: "05/03/2026", lieu: "Laboratoire BioSanté, Paris",
+    statut: "Réalisé", dureeEstimee: "15 min", contexte: "Consultation", contextId: "C001",
+    resultat: { dateResultat: "06/03/2026", commentaireMedecin: "Résultats dans les limites normales", interpretation: "Pas d'anomalie détectée. Bilan sanguin satisfaisant.", fichiers: [{ nom: "NFS_060326.pdf", type: "pdf" }] }
+  },
+  {
+    id: "EX002", nom: "Fibroscopie gastrique", date: "20/03/2026", lieu: "CHU Saint-Louis, Paris",
+    statut: "Planifié", dureeEstimee: "30 min", contexte: "Consultation", contextId: "C001"
+  },
+  {
+    id: "EX003", nom: "Scanner abdominal", date: "12/06/2025", lieu: "CHU Saint-Louis, Paris",
+    statut: "Réalisé", dureeEstimee: "45 min", contexte: "Hospitalisation", contextId: "H001",
+    resultat: { dateResultat: "12/06/2025", commentaireMedecin: "Cholécystite chronique lithiasique confirmée", interpretation: "Vésicule biliaire lithiasique avec épaississement pariétal modéré.", fichiers: [{ nom: "Scanner_120625.pdf", type: "pdf" }, { nom: "Scanner_image.jpg", type: "image" }] }
+  },
+  {
+    id: "EX004", nom: "Bilan lipidique complet", date: "15/01/2026", lieu: "Laboratoire Cerba, Boulogne",
+    statut: "Réalisé", dureeEstimee: "10 min", contexte: "Consultation", contextId: "C002",
+    resultat: { dateResultat: "16/01/2026", commentaireMedecin: "Bilan lipidique satisfaisant", interpretation: "Tous les paramètres sont dans les normes.", fichiers: [{ nom: "Bilan_lipidique.pdf", type: "pdf" }] }
+  },
+  {
+    id: "EX005", nom: "Radio pulmonaire", date: "20/09/2025", lieu: "Clinique du Parc, Paris",
+    statut: "Réalisé", dureeEstimee: "10 min", contexte: "Consultation", contextId: "C003"
+  },
+  {
+    id: "EX006", nom: "IRM cérébrale", date: "10/04/2026", lieu: "Centre d'Imagerie Médicale, Lyon",
+    statut: "Confirmé", dureeEstimee: "45 min", contexte: "Consultation", contextId: "C001"
+  },
+  {
+    id: "EX007", nom: "Bilan hépatique", date: "01/07/2025", lieu: "Laboratoire BioSanté, Paris",
+    statut: "Reporté", dureeEstimee: "15 min", contexte: "Hospitalisation", contextId: "H001"
+  },
+];
 
-interface BadgeInfo {
-  class: string;
-  icon?: string;
-  text: string;
-}
-
-const Examens: React.FC = () => {
-    const user = useAuthStore((state) => state.user);
-    const [rendezvous, setRendezvous] = useState<RendezVous[]>([]);
-    const [filteredRdv, setFilteredRdv] = useState<RendezVous[]>([]);
-    const [activeFilter, setActiveFilter] = useState<string>('all');
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const [showModal, setShowModal] = useState<boolean>(false);
-    const [selectedRdv, setSelectedRdv] = useState<RendezVous | null>(null);
-    const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
-
-    // Form state
-    const [formData, setFormData] = useState<FormDataState>({
-        patient: '',
-        motif: '',
-        dateRdv: '',
-        heureRdv: '09:00',
-        duree: '30',
-        type: 'consultation',
-        lieu: 'cabinet',
-        notes: '',
-        rappel: true
-    });
-
-    // Mock data - à remplacer par API
-    const mockRdv: RendezVous[] = [
-        {
-            id: 'RDV-001',
-            patient: {
-                id: 'pat_001',
-                nom: 'BIMA Afi',
-                avatar: 'BA',
-                telephone: '+228 90 12 34 56'
-            },
-            medecin: {
-                id: 'med_001',
-                nom: 'Dr. BEGNI Touna',
-                specialite: 'Cardiologie'
-            },
-            date: '2024-12-16',
-            heure: '09:00',
-            duree: 30,
-            type: 'consultation',
-            motif: 'Suivi cardiologique de routine',
-            statut: 'confirme',
-            lieu: 'Cabinet médical',
-            notes: 'Apporter les derniers résultats d\'analyses',
-            rappelEnvoye: true,
-            creeLe: '2024-12-10'
-        },
-        {
-            id: 'RDV-002',
-            patient: {
-                id: 'pat_002',
-                nom: 'Rebecca AZIALE',
-                avatar: 'RA',
-                telephone: '+228 91 23 45 67'
-            },
-            medecin: {
-                id: 'med_001',
-                nom: 'Dr. BEGNI Touna',
-                specialite: 'Cardiologie'
-            },
-            date: '2024-12-14',
-            heure: '14:30',
-            duree: 45,
-            type: 'controle',
-            motif: 'Contrôle post-opératoire',
-            statut: 'en_attente',
-            lieu: 'Cabinet médical',
-            notes: '',
-            rappelEnvoye: false,
-            creeLe: '2024-12-12'
-        },
-        {
-            id: 'RDV-003',
-            patient: {
-                id: 'pat_003',
-                nom: 'Martin KOFFI',
-                avatar: 'MK',
-                telephone: '+228 92 34 56 78'
-            },
-            medecin: {
-                id: 'med_001',
-                nom: 'Dr. BEGNI Touna',
-                specialite: 'Cardiologie'
-            },
-            date: '2024-12-18',
-            heure: '10:30',
-            duree: 60,
-            type: 'urgence',
-            motif: 'Douleurs thoraciques persistantes',
-            statut: 'urgent',
-            lieu: 'Clinique',
-            notes: 'Patient à examiner en priorité',
-            rappelEnvoye: true,
-            creeLe: '2024-12-13'
-        }
-    ];
-
-    const mockPatients: PatientInfo[] = [
-        { id: 'pat_001', nom: 'BIMA Afi', avatar: 'BA', telephone: '+228 90 12 34 56' },
-        { id: 'pat_002', nom: 'Rebecca AZIALE', avatar: 'RA', telephone: '+228 91 23 45 67' },
-        { id: 'pat_003', nom: 'Martin KOFFI', avatar: 'MK', telephone: '+228 92 34 56 78' }
-    ];
-
-    const creneauxDisponibles: string[] = [
-        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-        '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
-    ];
-
-    useEffect(() => {
-        setRendezvous(mockRdv);
-        setFilteredRdv(mockRdv);
-    }, []);
-
-    // Filtrage
-    useEffect(() => {
-        let filtered = rendezvous;
-
-        if (activeFilter !== 'all') {
-            filtered = filtered.filter(rdv => rdv.statut === activeFilter);
-        }
-
-        if (searchTerm) {
-            filtered = filtered.filter(rdv =>
-                rdv.patient.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                rdv.motif.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                rdv.id.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        setFilteredRdv(filtered);
-    }, [activeFilter, searchTerm, rendezvous]);
-
-    const stats = {
-        total: rendezvous.length,
-        confirme: rendezvous.filter(r => r.statut === 'confirme').length,
-        en_attente: rendezvous.filter(r => r.statut === 'en_attente').length,
-        urgent: rendezvous.filter(r => r.statut === 'urgent').length
-    };
-
-    const getStatutBadge = (statut: string): BadgeInfo => {
-        const badges: Record<string, BadgeInfo> = {
-            confirme: { class: 'badge-success', icon: 'fa-check-circle', text: 'Confirmé' },
-            en_attente: { class: 'badge-warning', icon: 'fa-clock', text: 'En attente' },
-            urgent: { class: 'badge-danger', icon: 'fa-exclamation-circle', text: 'Urgent' },
-            annule: { class: 'badge-danger', icon: 'fa-times-circle', text: 'Annulé' },
-            termine: { class: 'badge-info', icon: 'fa-check', text: 'Terminé' }
-        };
-        return badges[statut] || badges.en_attente;
-    };
-
-    const getTypeBadge = (type: string): BadgeInfo => {
-        const badges: Record<string, BadgeInfo> = {
-            consultation: { class: 'badge-info', text: 'Consultation' },
-            controle: { class: 'badge-medical', text: 'Contrôle' },
-            urgence: { class: 'badge-danger', text: 'Urgence' },
-            suivi: { class: 'badge-warning', text: 'Suivi' }
-        };
-        return badges[type] || badges.consultation;
-    };
-
-    const handleOpenModal = (rdv: RendezVous | null = null) => {
-        if (rdv) {
-            setFormData({
-                patient: rdv.patient.id,
-                motif: rdv.motif,
-                dateRdv: rdv.date,
-                heureRdv: rdv.heure,
-                duree: rdv.duree.toString(),
-                type: rdv.type,
-                lieu: rdv.lieu,
-                notes: rdv.notes,
-                rappel: rdv.rappelEnvoye
-            });
-            setSelectedRdv(rdv);
-        } else {
-            setFormData({
-                patient: '',
-                motif: '',
-                dateRdv: '',
-                heureRdv: '09:00',
-                duree: '30',
-                type: 'consultation',
-                lieu: 'cabinet',
-                notes: '',
-                rappel: true
-            });
-            setSelectedRdv(null);
-        }
-        setShowModal(true);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        const patientData = mockPatients.find(p => p.id === formData.patient);
-
-        const newRdv: RendezVous = {
-            id: `RDV-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-            patient: patientData!,
-            medecin: {
-                id: user?.id || '',
-                nom: `Dr. ${(user as any)?.nom} ${(user as any)?.prenom}`,
-                specialite: (user as any)?.specialite || ''
-            },
-            date: formData.dateRdv,
-            heure: formData.heureRdv,
-            duree: parseInt(formData.duree),
-            type: formData.type,
-            motif: formData.motif,
-            statut: 'en_attente',
-            lieu: formData.lieu,
-            notes: formData.notes,
-            rappelEnvoye: false,
-            creeLe: new Date().toISOString().split('T')[0]
-        };
-
-        if (selectedRdv) {
-            setRendezvous(rendezvous.map(r => r.id === selectedRdv.id ? { ...r, ...newRdv } : r));
-        } else {
-            setRendezvous([newRdv, ...rendezvous]);
-        }
-
-        setShowModal(false);
-        alert('Rendez-vous ' + (selectedRdv ? 'modifié' : 'créé') + ' avec succès !');
-    };
-
-    const handleConfirmer = (id: string) => {
-        setRendezvous(rendezvous.map(r =>
-            r.id === id ? { ...r, statut: 'confirme' } : r
-        ));
-    };
-
-    const handleAnnuler = (id: string) => {
-        if (window.confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) {
-            setRendezvous(rendezvous.map(r =>
-                r.id === id ? { ...r, statut: 'annule' } : r
-            ));
-        }
-    };
-
-    const handleViewDetails = (rdv: RendezVous) => {
-        setSelectedRdv(rdv);
-        setShowDetailsModal(true);
-    };
-
-    return (
-        <div className="page-content">
-            {/* Header */}
-            <div className="content-header-app">
-                <div className="header-image" style={{
-                    background: 'linear-gradient(rgba(41, 128, 185, 0.8), rgba(41, 128, 185, 0.9)), url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80)',
-                    backgroundSize: 'cover'
-                }}>
-                    <div className="header-overlay">
-                        <h1>
-                            {user?.role === 'medecin' ? 'Mes Rendez-vous Médicaux' : 'Mes Rendez-vous'}
-                        </h1>
-                        <p>
-                            {user?.role === 'medecin'
-                                ? 'Gérez vos consultations et suivez vos patients'
-                                : 'Consultez vos rendez-vous médicaux'
-                            }
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="content-body">
-                {/* Statistiques */}
-                <div className="stats-grid mb-6">
-                    <div className="stat-card">
-                        <div className="stat-icon blue">
-                            <i className="fas fa-calendar-alt"></i>
-                        </div>
-                        <div className="stat-info">
-                            <h3>{stats.total}</h3>
-                            <p>Total rendez-vous</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon green">
-                            <i className="fas fa-check-circle"></i>
-                        </div>
-                        <div className="stat-info">
-                            <h3>{stats.confirme}</h3>
-                            <p>Confirmés</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon orange">
-                            <i className="fas fa-clock"></i>
-                        </div>
-                        <div className="stat-info">
-                            <h3>{stats.en_attente}</h3>
-                            <p>En attente</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon red">
-                            <i className="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div className="stat-info">
-                            <h3>{stats.urgent}</h3>
-                            <p>Urgents</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions et filtres */}
-                <div className="content-card-app mb-6">
-                    <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                        <h3 className="card-title">Liste des rendez-vous</h3>
-                        {user?.role === 'medecin' && (
-                            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-                                <i className="fas fa-plus"></i> Nouveau rendez-vous
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex gap-4 mb-4 flex-wrap">
-                        <div className="search-box flex-1 min-w-[250px]">
-                            <i className="fas fa-search"></i>
-                            <input
-                                type="text"
-                                placeholder="Rechercher..."
-                                className="form-control"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                className={`btn ${activeFilter === 'all' ? 'btn-primary' : 'btn-outline'}`}
-                                onClick={() => setActiveFilter('all')}
-                            >
-                                Tous
-                            </button>
-                            <button
-                                className={`btn ${activeFilter === 'confirme' ? 'btn-primary' : 'btn-outline'}`}
-                                onClick={() => setActiveFilter('confirme')}
-                            >
-                                Confirmés
-                            </button>
-                            <button
-                                className={`btn ${activeFilter === 'en_attente' ? 'btn-primary' : 'btn-outline'}`}
-                                onClick={() => setActiveFilter('en_attente')}
-                            >
-                                En attente
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Liste des rendez-vous */}
-                    <div className="space-y-4">
-                        {filteredRdv.map(rdv => {
-                            const statutBadge = getStatutBadge(rdv.statut);
-                            const typeBadge = getTypeBadge(rdv.type);
-
-                            return (
-                                <div key={rdv.id} className="content-card-app card-interactive">
-                                    <div className="flex justify-between items-start gap-4">
-                                        <div className="flex items-start gap-4 flex-1">
-                                            {/* Avatar */}
-                                            <div className="avatar" style={{ width: '60px', height: '60px', fontSize: '1.5rem' }}>
-                                                {user?.role === 'medecin' ? rdv.patient.avatar : rdv.medecin.nom.split(' ')[1][0] + rdv.medecin.nom.split(' ')[2][0]}
-                                            </div>
-
-                                            {/* Infos */}
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h4 className="text-lg font-bold">
-                                                        {user?.role === 'medecin' ? rdv.patient.nom : rdv.medecin.nom}
-                                                    </h4>
-                                                    <span className={`badge ${statutBadge.class}`}>
-                                                        <i className={`fas ${statutBadge.icon}`}></i> {statutBadge.text}
-                                                    </span>
-                                                    <span className={`badge ${typeBadge.class}`}>
-                                                        {typeBadge.text}
-                                                    </span>
-                                                </div>
-
-                                                <p className="text-gray-600 mb-3">{rdv.motif}</p>
-
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                                    <div>
-                                                        <i className="fas fa-calendar text-blue-600 mr-2"></i>
-                                                        <strong>Date:</strong> {new Date(rdv.date).toLocaleDateString('fr-FR')}
-                                                    </div>
-                                                    <div>
-                                                        <i className="fas fa-clock text-green-600 mr-2"></i>
-                                                        <strong>Heure:</strong> {rdv.heure}
-                                                    </div>
-                                                    <div>
-                                                        <i className="fas fa-hourglass-half text-orange-600 mr-2"></i>
-                                                        <strong>Durée:</strong> {rdv.duree} min
-                                                    </div>
-                                                    <div>
-                                                        <i className="fas fa-map-marker-alt text-red-600 mr-2"></i>
-                                                        <strong>Lieu:</strong> {rdv.lieu}
-                                                    </div>
-                                                </div>
-
-                                                {rdv.notes && (
-                                                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                                        <strong className="text-sm">Notes:</strong>
-                                                        <p className="text-sm text-gray-600 mt-1">{rdv.notes}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex flex-col gap-2">
-                                            <button
-                                                className="btn btn-outline btn-sm"
-                                                onClick={() => handleViewDetails(rdv)}
-                                            >
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-
-                                            {user?.role === 'medecin' && (
-                                                <>
-                                                    <button
-                                                        className="btn btn-outline btn-sm"
-                                                        onClick={() => handleOpenModal(rdv)}
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-
-                                                    {rdv.statut === 'en_attente' && (
-                                                        <button
-                                                            className="btn btn-success btn-sm"
-                                                            onClick={() => handleConfirmer(rdv.id)}
-                                                        >
-                                                            <i className="fas fa-check"></i>
-                                                        </button>
-                                                    )}
-
-                                                    {rdv.statut !== 'annule' && (
-                                                        <button
-                                                            className="btn btn-danger btn-sm"
-                                                            onClick={() => handleAnnuler(rdv.id)}
-                                                        >
-                                                            <i className="fas fa-times"></i>
-                                                        </button>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {filteredRdv.length === 0 && (
-                            <div className="text-center py-12 text-gray-500">
-                                <i className="fas fa-calendar-times text-6xl mb-4 opacity-30"></i>
-                                <p>Aucun rendez-vous trouvé</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Modal Nouveau/Modifier RDV */}
-            {showModal && user?.role === 'medecin' && (
-                <div className="modal-overlay">
-                    <div className="modal-container">
-                        <div className="modal-header">
-                            <h3>
-                                <i className="fas fa-calendar-plus"></i>
-                                {selectedRdv ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}
-                            </h3>
-                            <button className="modal-close" onClick={() => setShowModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <form onSubmit={handleSubmit}>
-                            <div className="modal-body">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="form-group col-span-2">
-                                        <label>Patient *</label>
-                                        <select
-                                            className="form-control"
-                                            value={formData.patient}
-                                            onChange={(e) => setFormData({...formData, patient: e.target.value})}
-                                            required
-                                        >
-                                            <option value="">Sélectionner un patient</option>
-                                            {mockPatients.map(p => (
-                                                <option key={p.id} value={p.id}>{p.nom}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Type de rendez-vous *</label>
-                                        <select
-                                            className="form-control"
-                                            value={formData.type}
-                                            onChange={(e) => setFormData({...formData, type: e.target.value})}
-                                            required
-                                        >
-                                            <option value="consultation">Consultation</option>
-                                            <option value="controle">Contrôle</option>
-                                            <option value="suivi">Suivi</option>
-                                            <option value="urgence">Urgence</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Durée (minutes) *</label>
-                                        <select
-                                            className="form-control"
-                                            value={formData.duree}
-                                            onChange={(e) => setFormData({...formData, duree: e.target.value})}
-                                            required
-                                        >
-                                            <option value="15">15 min</option>
-                                            <option value="30">30 min</option>
-                                            <option value="45">45 min</option>
-                                            <option value="60">1 heure</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="form-group col-span-2">
-                                        <label>Motif de consultation *</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={formData.motif}
-                                            onChange={(e) => setFormData({...formData, motif: e.target.value})}
-                                            placeholder="Ex: Suivi cardiologique"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Date *</label>
-                                        <input
-                                            type="date"
-                                            className="form-control"
-                                            value={formData.dateRdv}
-                                            onChange={(e) => setFormData({...formData, dateRdv: e.target.value})}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Heure *</label>
-                                        <select
-                                            className="form-control"
-                                            value={formData.heureRdv}
-                                            onChange={(e) => setFormData({...formData, heureRdv: e.target.value})}
-                                            required
-                                        >
-                                            {creneauxDisponibles.map(creneau => (
-                                                <option key={creneau} value={creneau}>{creneau}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="form-group col-span-2">
-                                        <label>Lieu</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={formData.lieu}
-                                            onChange={(e) => setFormData({...formData, lieu: e.target.value})}
-                                            placeholder="Cabinet médical"
-                                        />
-                                    </div>
-
-                                    <div className="form-group col-span-2">
-                                        <label>Notes</label>
-                                        <textarea
-                                            className="form-control"
-                                            rows={3}
-                                            value={formData.notes}
-                                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                                            placeholder="Notes pour le patient..."
-                                        />
-                                    </div>
-
-                                    <div className="form-group col-span-2">
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.rappel}
-                                                onChange={(e) => setFormData({...formData, rappel: e.target.checked})}
-                                            />
-                                            <span>Envoyer un rappel au patient</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
-                                    Annuler
-                                </button>
-                                <button type="submit" className="btn btn-primary">
-                                    <i className="fas fa-save"></i>
-                                    {selectedRdv ? 'Modifier' : 'Créer'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Détails */}
-            {showDetailsModal && selectedRdv && (
-                <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
-                    <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>
-                                <i className="fas fa-calendar-alt"></i>
-                                Détails du rendez-vous
-                            </h3>
-                            <button className="modal-close" onClick={() => setShowDetailsModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                                <div className="avatar" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>
-                                    {user?.role === 'medecin' ? selectedRdv.patient.avatar : 'Dr'}
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold">
-                                        {user?.role === 'medecin' ? selectedRdv.patient.nom : selectedRdv.medecin.nom}
-                                    </h2>
-                                    <p className="text-gray-600">
-                                        {user?.role === 'medecin'
-                                            ? `Tél: ${selectedRdv.patient.telephone}`
-                                            : selectedRdv.medecin.specialite
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="info-card col-span-2">
-                                    <h4>Informations</h4>
-                                    <p><strong>ID:</strong> {selectedRdv.id}</p>
-                                    <p><strong>Type:</strong> {getTypeBadge(selectedRdv.type).text}</p>
-                                    <p><strong>Motif:</strong> {selectedRdv.motif}</p>
-                                    <p><strong>Statut:</strong> <span className={`badge ${getStatutBadge(selectedRdv.statut).class}`}>
-                                        {getStatutBadge(selectedRdv.statut).text}
-                                    </span></p>
-                                </div>
-
-                                <div className="info-card">
-                                    <h4>Date et heure</h4>
-                                    <p><i className="fas fa-calendar mr-2"></i>{new Date(selectedRdv.date).toLocaleDateString('fr-FR', {
-                                        weekday: 'long',
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    })}</p>
-                                    <p><i className="fas fa-clock mr-2"></i>{selectedRdv.heure}</p>
-                                    <p><i className="fas fa-hourglass-half mr-2"></i>{selectedRdv.duree} minutes</p>
-                                </div>
-
-                                <div className="info-card">
-                                    <h4>Lieu</h4>
-                                    <p><i className="fas fa-map-marker-alt mr-2"></i>{selectedRdv.lieu}</p>
-                                </div>
-
-                                {selectedRdv.notes && (
-                                    <div className="info-card col-span-2">
-                                        <h4>Notes</h4>
-                                        <p>{selectedRdv.notes}</p>
-                                    </div>
-                                )}
-
-                                <div className="info-card col-span-2">
-                                    <h4>Informations complémentaires</h4>
-                                    <div className="grid grid-cols-2 gap-4 mt-3">
-                                        <div>
-                                            <span className="text-sm text-gray-600">Date de création:</span>
-                                            <p className="font-semibold">{selectedRdv.creeLe}</p>
-                                        </div>
-                                        <div>
-                                            <span className="text-sm text-gray-600">Rappel envoyé:</span>
-                                            <p className="font-semibold">
-                                                {selectedRdv.rappelEnvoye ? (
-                                                    <span className="text-green-600">
-                                                        <i className="fas fa-check-circle"></i> Oui
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-orange-600">
-                                                        <i className="fas fa-clock"></i> Non
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button
-                                className="btn btn-outline"
-                                onClick={() => setShowDetailsModal(false)}
-                            >
-                                Fermer
-                            </button>
-                            {user?.role === 'medecin' && (
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => {
-                                        setShowDetailsModal(false);
-                                        handleOpenModal(selectedRdv);
-                                    }}
-                                >
-                                    <i className="fas fa-edit"></i> Modifier
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+/* ─── Status config ─── */
+const STATUS_CFG: Record<ExamStatus, { color: string; bg: string; border: string; icon: React.ReactNode }> = {
+  "Planifié":     { color: "#3b82f6", bg: "#eff6ff", border: "#bfdbfe", icon: <Calendar size={11} /> },
+  "Confirmé":     { color: "#10b981", bg: "#ecfdf5", border: "#6ee7b7", icon: <CheckCircle size={11} /> },
+  "Reporté":      { color: "#f59e0b", bg: "#fffbeb", border: "#fcd34d", icon: <AlertTriangle size={11} /> },
+  "Réalisé":      { color: "#163344", bg: "#f1f5f9", border: "#cbd5e1", icon: <CheckCircle size={11} /> },
+  "Non réalisé":  { color: "#ef4444", bg: "#fef2f2", border: "#fecaca", icon: <XCircle size={11} /> },
 };
+
+/* ─── Shared card style ─── */
+const card: React.CSSProperties = {
+  backgroundColor: "white", borderRadius: "1rem",
+  border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden",
+};
+
+/* ─── StatusBadge ─── */
+const StatusBadge = ({ statut }: { statut: ExamStatus }) => {
+  const cfg = STATUS_CFG[statut];
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "3px 10px", borderRadius: "9999px", fontSize: "0.6875rem", fontWeight: 700,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, flexShrink: 0,
+    }}>
+      {cfg.icon} {statut}
+    </span>
+  );
+};
+
+/* ════════════════════════════════════════════
+   MAIN COMPONENT
+════════════════════════════════════════════ */
+const Examens = () => {
+  const [exams, setExams]                   = useState<Exam[]>(mockExams);
+  const [selectedExam, setSelectedExam]     = useState<Exam | null>(null);
+  const [filterStatus, setFilterStatus]     = useState<string>("all");
+  const [searchQuery, setSearchQuery]       = useState("");
+  const [showAddModal, setShowAddModal]     = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultExamId, setResultExamId]     = useState<string | null>(null);
+  const [hoveredId, setHoveredId]           = useState<string | null>(null);
+
+  const [newExam, setNewExam] = useState({
+    nom: "", lieu: "", date: "", dureeEstimee: "",
+    statut: "Planifié" as ExamStatus, contexte: "Consultation" as ExamContext, contextId: "",
+  });
+
+  const filteredExams = exams.filter((e) => {
+    const matchStatus = filterStatus === "all" || e.statut === filterStatus;
+    const matchSearch = e.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.lieu.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchStatus && matchSearch;
+  });
+
+  const handleAddExam = () => {
+    if (!newExam.nom || !newExam.date) return;
+    setExams((prev) => [{ ...newExam, id: `EX${String(prev.length + 1).padStart(3, "0")}` }, ...prev]);
+    setNewExam({ nom: "", lieu: "", date: "", dureeEstimee: "", statut: "Planifié", contexte: "Consultation", contextId: "" });
+    setShowAddModal(false);
+  };
+
+  const handleStatusChange = (examId: string, newStatus: ExamStatus) => {
+    setExams((prev) => prev.map((e) => e.id === examId ? { ...e, statut: newStatus } : e));
+    setSelectedExam((prev) => prev?.id === examId ? { ...prev, statut: newStatus } : prev);
+  };
+
+  const getContextLabel = (exam: Exam) => {
+    if (exam.contexte === "Consultation") {
+      const c = CONSULTATIONS.find((c) => c.id === exam.contextId);
+      return c ? `Consultation · ${c.motif} (${c.date})` : "Consultation";
+    }
+    const h = HOSPITALISATIONS.find((h) => h.id === exam.contextId);
+    return h ? `Hospitalisation · ${h.motif} (${h.dateAdmission})` : "Hospitalisation";
+  };
+
+  const openResultModal = (examId: string) => { setResultExamId(examId); setShowResultModal(true); };
+
+  /* ── Stats ── */
+  const stats = [
+    { label: "Total",      value: exams.length,                                                 color: "#163344", bg: "#f1f5f9" },
+    { label: "Planifiés",  value: exams.filter((e) => e.statut === "Planifié" || e.statut === "Confirmé").length, color: "#3b82f6", bg: "#eff6ff" },
+    { label: "Réalisés",   value: exams.filter((e) => e.statut === "Réalisé").length,            color: "#10b981", bg: "#ecfdf5" },
+    { label: "Reportés",   value: exams.filter((e) => e.statut === "Reporté").length,            color: "#f59e0b", bg: "#fffbeb" },
+  ];
+
+  /* ════ DETAIL VIEW ════ */
+  if (selectedExam) {
+    return (
+      <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+        {/* Back */}
+        <button onClick={() => setSelectedExam(null)} style={{
+          display: "flex", alignItems: "center", gap: 6, fontSize: "0.875rem",
+          fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0,
+        }}>
+          <ArrowLeft size={16} /> Retour aux examens
+        </button>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "1.5rem" }} className="exam-detail-grid">
+
+          {/* ── Left column ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+            {/* Main info card */}
+            <div style={card}>
+              <div style={{
+                padding: "1.5rem",
+                background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: "0.875rem", flexShrink: 0,
+                    background: "#163344", display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }}>
+                    <TestTube size={24} color="white" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "#1f2937" }}>{selectedExam.nom}</div>
+                    <div style={{ fontSize: "0.8125rem", color: "#64748b", marginTop: 3 }}>{selectedExam.lieu}</div>
+                  </div>
+                </div>
+                <StatusBadge statut={selectedExam.statut} />
+              </div>
+
+              <div style={{ padding: "1.25rem 1.5rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                {[
+                  { icon: <Calendar size={14} color="#94a3b8" />, label: "Date", value: selectedExam.date },
+                  { icon: <Clock size={14} color="#94a3b8" />,    label: "Durée estimée", value: selectedExam.dureeEstimee },
+                  { icon: <MapPin size={14} color="#94a3b8" />,   label: "Lieu", value: selectedExam.lieu },
+                ].map((f) => (
+                  <div key={f.label} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ marginTop: 2 }}>{f.icon}</div>
+                    <div>
+                      <div style={{ fontSize: "0.6875rem", color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</div>
+                      <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1f2937", marginTop: 2 }}>{f.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Context card */}
+            <div style={card}>
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>
+                Contexte médical
+              </div>
+              <div style={{ padding: "1.25rem 1.5rem" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "0.75rem",
+                  padding: "0.875rem 1rem", background: "#f8fafc", borderRadius: "0.75rem",
+                  border: "1px solid #e2e8f0",
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "0.5rem", flexShrink: 0,
+                    background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {selectedExam.contexte === "Consultation"
+                      ? <Stethoscope size={16} color="#3b82f6" />
+                      : <Building2 size={16} color="#3b82f6" />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {getContextLabel(selectedExam)}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{selectedExam.contexte}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Results card */}
+            <div style={card}>
+              <div style={{
+                padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>Résultats</div>
+                {!selectedExam.resultat && (
+                  <button onClick={() => openResultModal(selectedExam.id)} style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "6px 14px", borderRadius: "0.625rem", border: "none",
+                    background: "#163344", color: "white", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <Plus size={13} /> Ajouter résultats
+                  </button>
+                )}
+              </div>
+              <div style={{ padding: "1.25rem 1.5rem" }}>
+                {selectedExam.resultat ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                      {[
+                        { label: "Date du résultat", value: selectedExam.resultat.dateResultat },
+                        { label: "Commentaire du médecin", value: selectedExam.resultat.commentaireMedecin },
+                      ].map((f) => (
+                        <div key={f.label}>
+                          <div style={{ fontSize: "0.6875rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{f.label}</div>
+                          <div style={{ fontSize: "0.875rem", color: "#1f2937" }}>{f.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "0.6875rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Interprétation</div>
+                      <div style={{ fontSize: "0.875rem", color: "#374151", background: "#f8fafc", borderRadius: "0.625rem", padding: "0.875rem", lineHeight: 1.6 }}>
+                        {selectedExam.resultat.interpretation}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "0.6875rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Fichiers joints</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {selectedExam.resultat.fichiers.map((f, i) => (
+                          <div key={i} style={{
+                            display: "flex", alignItems: "center", gap: "0.75rem",
+                            padding: "0.625rem 0.875rem", border: "1px solid #e2e8f0",
+                            borderRadius: "0.625rem", background: "#fafafa",
+                          }}>
+                            {f.type === "pdf"
+                              ? <FileText size={18} color="#ef4444" />
+                              : <ImageIcon size={18} color="#3b82f6" />}
+                            <span style={{ flex: 1, fontSize: "0.875rem", color: "#374151" }}>{f.nom}</span>
+                            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
+                              <Download size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "2.5rem 1rem", color: "#94a3b8" }}>
+                    <FileText size={40} style={{ margin: "0 auto 10px", display: "block", opacity: 0.3 }} />
+                    <div style={{ fontSize: "0.875rem" }}>Aucun résultat disponible</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right sidebar ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <div style={card}>
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>
+                Actions
+              </div>
+              <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                {selectedExam.statut === "Planifié" && (
+                  <button onClick={() => handleStatusChange(selectedExam.id, "Confirmé")} style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "0.625rem", borderRadius: "0.625rem", border: "none",
+                    background: "#10b981", color: "white", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <CheckCircle size={15} /> Confirmer ma présence
+                  </button>
+                )}
+                {(selectedExam.statut === "Planifié" || selectedExam.statut === "Confirmé") && (
+                  <button onClick={() => handleStatusChange(selectedExam.id, "Reporté")} style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "0.625rem", borderRadius: "0.625rem",
+                    border: "1px solid #fcd34d", background: "#fffbeb",
+                    color: "#f59e0b", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <AlertTriangle size={15} /> Reporter l'examen
+                  </button>
+                )}
+                {selectedExam.statut !== "Réalisé" && (
+                  <button onClick={() => handleStatusChange(selectedExam.id, "Réalisé")} style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "0.625rem", borderRadius: "0.625rem",
+                    border: "1px solid #e2e8f0", background: "white",
+                    color: "#374151", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <CheckCircle size={15} /> Marquer comme réalisé
+                  </button>
+                )}
+                <button onClick={() => openResultModal(selectedExam.id)} style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  padding: "0.625rem", borderRadius: "0.625rem",
+                  border: "1px solid #e2e8f0", background: "white",
+                  color: "#374151", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+                }}>
+                  <Upload size={15} /> {selectedExam.resultat ? "Modifier résultats" : "Ajouter résultats"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Result modal */}
+        <ResultModal
+          open={showResultModal} onClose={() => setShowResultModal(false)}
+          examId={resultExamId} exams={exams} setExams={setExams} setSelectedExam={setSelectedExam}
+        />
+
+        {/* Responsive grid */}
+        <style>{`@media (max-width: 900px) { .exam-detail-grid { grid-template-columns: 1fr !important; } }`}</style>
+      </div>
+    );
+  }
+
+  /* ════ LIST VIEW ════ */
+  return (
+    <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "2rem" }}>
+
+      {/* ─── Hero Banner ─── */}
+      <div style={{
+        background: "linear-gradient(135deg, #163344 0%, #1e4060 60%, #163344 100%)",
+        borderRadius: "1rem", padding: "2rem", color: "white",
+        position: "relative", overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
+      }}>
+        <div style={{ position: "absolute", right: -30, top: -30, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "0.75rem", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <TestTube size={20} color="white" />
+            </div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>Mes Examens</div>
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: "0.875rem" }}>
+            Suivez vos examens médicaux et consultez vos résultats
+          </div>
+        </div>
+        <button onClick={() => setShowAddModal(true)} style={{
+          position: "relative", zIndex: 1,
+          display: "flex", alignItems: "center", gap: "0.5rem",
+          padding: "0.625rem 1.25rem", borderRadius: "0.75rem",
+          background: "#10b981", border: "none", color: "white",
+          fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+          boxShadow: "0 4px 12px rgba(16,185,129,0.4)",
+        }}>
+          <Plus size={16} /> Ajouter un examen
+        </button>
+      </div>
+
+      {/* ─── Stats ─── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{ ...card, padding: "1.25rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+            <div style={{
+              width: 46, height: 46, borderRadius: "0.75rem", flexShrink: 0,
+              background: s.bg, color: s.color,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.25rem", fontWeight: 800,
+            }}>{s.value}</div>
+            <div style={{ fontSize: "0.8125rem", color: "#64748b", fontWeight: 500 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ─── Filters ─── */}
+      <div style={{ ...card, padding: "1rem 1.5rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+          {/* Search */}
+          <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+            <Search size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher un examen..."
+              style={{
+                width: "100%", paddingLeft: "2.25rem", paddingRight: "1rem",
+                paddingTop: "0.5625rem", paddingBottom: "0.5625rem",
+                border: "1px solid #e2e8f0", borderRadius: "0.625rem",
+                fontSize: "0.875rem", outline: "none", background: "#f8fafc",
+                color: "#374151", boxSizing: "border-box",
+              }}
+            />
+          </div>
+          {/* Status filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Filter size={14} color="#94a3b8" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                padding: "0.5625rem 0.875rem", border: "1px solid #e2e8f0",
+                borderRadius: "0.625rem", fontSize: "0.875rem", background: "#f8fafc",
+                color: "#374151", outline: "none", cursor: "pointer",
+              }}
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="Planifié">Planifié</option>
+              <option value="Confirmé">Confirmé</option>
+              <option value="Reporté">Reporté</option>
+              <option value="Réalisé">Réalisé</option>
+              <option value="Non réalisé">Non réalisé</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Exam list ─── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <AnimatePresence>
+          {filteredExams.map((exam, i) => {
+            const isHov = hoveredId === exam.id;
+            return (
+              <motion.div key={exam.id}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }} transition={{ delay: i * 0.03 }}
+              >
+                <div
+                  onClick={() => setSelectedExam(exam)}
+                  onMouseEnter={() => setHoveredId(exam.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  style={{
+                    ...card,
+                    cursor: "pointer", padding: "1.25rem",
+                    border: `1.5px solid ${isHov ? "#163344" : "#e2e8f0"}`,
+                    boxShadow: isHov ? "0 4px 16px rgba(22,51,68,0.1)" : "0 1px 3px rgba(0,0,0,0.04)",
+                    transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: "1rem",
+                  }}
+                >
+                  {/* Icon */}
+                  <div style={{
+                    width: 48, height: 48, borderRadius: "0.75rem", flexShrink: 0,
+                    background: isHov ? "#163344" : "#f1f5f9",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 0.15s",
+                  }}>
+                    <TestTube size={22} color={isHov ? "white" : "#163344"} />
+                  </div>
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem", marginBottom: 6 }}>
+                      <div style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {exam.nom}
+                      </div>
+                      <StatusBadge statut={exam.statut} />
+                    </div>
+                    <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap", marginBottom: 8 }}>
+                      {[
+                        { icon: <Calendar size={11} />, text: exam.date },
+                        { icon: <MapPin size={11} />,   text: exam.lieu },
+                        { icon: <Clock size={11} />,    text: exam.dureeEstimee },
+                      ].map((m, mi) => (
+                        <span key={mi} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.75rem", color: "#64748b" }}>
+                          <span style={{ color: "#94a3b8" }}>{m.icon}</span> {m.text}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "2px 10px", borderRadius: "9999px",
+                        background: "#f1f5f9", color: "#475569", fontSize: "0.6875rem", fontWeight: 600,
+                      }}>
+                        {exam.contexte === "Consultation" ? <Stethoscope size={10} /> : <Building2 size={10} />}
+                        {exam.contexte}
+                      </span>
+                      {exam.resultat && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "2px 10px", borderRadius: "9999px",
+                          background: "#ecfdf5", color: "#10b981", fontSize: "0.6875rem", fontWeight: 600,
+                        }}>
+                          <FileText size={10} /> Résultats disponibles
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}
+                    onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => setSelectedExam(exam)} style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "6px 14px", borderRadius: "0.5rem",
+                      border: "1px solid #e2e8f0", background: "white",
+                      color: "#374151", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                    }}>
+                      <Eye size={13} /> Détails
+                    </button>
+                    <button onClick={() => openResultModal(exam.id)} style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "6px 14px", borderRadius: "0.5rem", border: "none",
+                      background: exam.resultat ? "#f1f5f9" : "#163344",
+                      color: exam.resultat ? "#374151" : "white",
+                      fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                    }}>
+                      <FileText size={13} /> {exam.resultat ? "Résultats" : "Ajouter"}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        {filteredExams.length === 0 && (
+          <div style={{ textAlign: "center", padding: "4rem 1.5rem", color: "#94a3b8" }}>
+            <TestTube size={40} style={{ margin: "0 auto 12px", display: "block", opacity: 0.3 }} />
+            <div style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 4 }}>Aucun examen trouvé</div>
+            <div style={{ fontSize: "0.8125rem" }}>Modifiez vos filtres ou ajoutez un nouvel examen</div>
+          </div>
+        )}
+      </div>
+
+      {/* ─── Add Exam Modal ─── */}
+      <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Ajouter un examen">
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <FormField label="Nom de l'examen">
+            <input value={newExam.nom} onChange={(e) => setNewExam((p) => ({ ...p, nom: e.target.value }))}
+              placeholder="Ex: Analyse sanguine" style={inputStyle} />
+          </FormField>
+          <FormField label="Lieu">
+            <input value={newExam.lieu} onChange={(e) => setNewExam((p) => ({ ...p, lieu: e.target.value }))}
+              placeholder="Laboratoire, hôpital..." style={inputStyle} />
+          </FormField>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <FormField label="Date prévue">
+              <input type="date" value={newExam.date} onChange={(e) => setNewExam((p) => ({ ...p, date: e.target.value }))} style={inputStyle} />
+            </FormField>
+            <FormField label="Durée estimée">
+              <input value={newExam.dureeEstimee} onChange={(e) => setNewExam((p) => ({ ...p, dureeEstimee: e.target.value }))}
+                placeholder="Ex: 30 min" style={inputStyle} />
+            </FormField>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <FormField label="Statut">
+              <select value={newExam.statut} onChange={(e) => setNewExam((p) => ({ ...p, statut: e.target.value as ExamStatus }))} style={inputStyle}>
+                <option value="Planifié">Planifié</option>
+                <option value="Confirmé">Confirmé</option>
+              </select>
+            </FormField>
+            <FormField label="Contexte">
+              <select value={newExam.contexte} onChange={(e) => setNewExam((p) => ({ ...p, contexte: e.target.value as ExamContext }))} style={inputStyle}>
+                <option value="Consultation">Consultation</option>
+                <option value="Hospitalisation">Hospitalisation</option>
+              </select>
+            </FormField>
+          </div>
+          <FormField label="Lié à">
+            <select value={newExam.contextId} onChange={(e) => setNewExam((p) => ({ ...p, contextId: e.target.value }))} style={inputStyle}>
+              <option value="">Sélectionner...</option>
+              {newExam.contexte === "Consultation"
+                ? CONSULTATIONS.filter((c) => c.patientId === "P001").map((c) => (
+                    <option key={c.id} value={c.id}>{c.motif} ({c.date})</option>
+                  ))
+                : HOSPITALISATIONS.filter((h) => h.patientId === "P001").map((h) => (
+                    <option key={h.id} value={h.id}>{h.motif} ({h.dateAdmission})</option>
+                  ))
+              }
+            </select>
+          </FormField>
+          <button onClick={handleAddExam} style={{
+            width: "100%", padding: "0.75rem", borderRadius: "0.75rem", border: "none",
+            background: "#163344", color: "white", fontSize: "0.9375rem", fontWeight: 700, cursor: "pointer",
+          }}>
+            Ajouter l'examen
+          </button>
+        </div>
+      </Modal>
+
+      {/* ─── Result Modal ─── */}
+      <ResultModal
+        open={showResultModal} onClose={() => setShowResultModal(false)}
+        examId={resultExamId} exams={exams} setExams={setExams} setSelectedExam={setSelectedExam}
+      />
+    </div>
+  );
+};
+
+/* ════ MODAL wrapper ════ */
+const Modal = ({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) => {
+  if (!open) return null;
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 999,
+      background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+    }} onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "white", borderRadius: "1rem", width: "100%", maxWidth: 500,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden",
+        }}
+      >
+        <div style={{
+          padding: "1.25rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ fontSize: "1rem", fontWeight: 700, color: "#1f2937" }}>{title}</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ padding: "1.5rem" }}>{children}</div>
+      </motion.div>
+    </div>
+  );
+};
+
+/* ════ RESULT MODAL ════ */
+const ResultModal = ({ open, onClose, examId, exams, setExams, setSelectedExam }: {
+  open: boolean; onClose: () => void; examId: string | null;
+  exams: Exam[]; setExams: React.Dispatch<React.SetStateAction<Exam[]>>;
+  setSelectedExam: React.Dispatch<React.SetStateAction<Exam | null>>;
+}) => {
+  const [data, setData] = useState({ dateResultat: "", commentaireMedecin: "", interpretation: "" });
+
+  const handleSave = () => {
+    if (!examId) return;
+    const result: ExamResult = { ...data, fichiers: [{ nom: "resultat_upload.pdf", type: "pdf" }] };
+    setExams((prev) => prev.map((e) => e.id === examId ? { ...e, resultat: result, statut: "Réalisé" as ExamStatus } : e));
+    setSelectedExam((prev) => prev?.id === examId ? { ...prev, resultat: result, statut: "Réalisé" as ExamStatus } : prev);
+    setData({ dateResultat: "", commentaireMedecin: "", interpretation: "" });
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Ajouter les résultats">
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <FormField label="Date du résultat">
+          <input type="date" value={data.dateResultat} onChange={(e) => setData((p) => ({ ...p, dateResultat: e.target.value }))} style={inputStyle} />
+        </FormField>
+        <FormField label="Commentaire du médecin">
+          <textarea value={data.commentaireMedecin} onChange={(e) => setData((p) => ({ ...p, commentaireMedecin: e.target.value }))}
+            placeholder="Commentaire..." rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+        </FormField>
+        <FormField label="Interprétation médicale">
+          <textarea value={data.interpretation} onChange={(e) => setData((p) => ({ ...p, interpretation: e.target.value }))}
+            placeholder="Analyse détaillée..." rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+        </FormField>
+        <FormField label="Fichiers">
+          <div style={{
+            border: "2px dashed #e2e8f0", borderRadius: "0.75rem", padding: "1.5rem",
+            textAlign: "center", cursor: "pointer", background: "#fafafa",
+          }}>
+            <Upload size={28} color="#94a3b8" style={{ margin: "0 auto 8px", display: "block" }} />
+            <div style={{ fontSize: "0.875rem", color: "#64748b" }}>Cliquez pour télécharger</div>
+            <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: 4 }}>PDF, JPG, PNG — Max 10 Mo</div>
+          </div>
+        </FormField>
+        <button onClick={handleSave} style={{
+          width: "100%", padding: "0.75rem", borderRadius: "0.75rem", border: "none",
+          background: "#163344", color: "white", fontSize: "0.9375rem", fontWeight: 700, cursor: "pointer",
+        }}>
+          Enregistrer les résultats
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+/* ════ HELPERS ════ */
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "0.5625rem 0.875rem",
+  border: "1px solid #e2e8f0", borderRadius: "0.625rem",
+  fontSize: "0.875rem", background: "#f8fafc", color: "#374151",
+  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+};
+
+const FormField = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      {label}
+    </label>
+    {children}
+  </div>
+);
 
 export default Examens;
