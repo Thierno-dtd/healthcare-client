@@ -360,13 +360,13 @@ export const MENU_CONFIG: MenuConfig = {
       section: 'Général',
       items: [
         { id: 'dashboard', label: 'Tableau de bord', icon: 'fas fa-tachometer-alt', route: '/dashboard' },
-        { id: 'expert', label: 'Expert Médical IA', icon: 'fas fa-robot', route: '/patient/expert-medical' },
+        //{ id: 'expert', label: 'Expert Médical IA', icon: 'fas fa-robot', route: '/patient/expert-medical' },
       ],
     },
     {
       section: 'Dossiers & Examens',
       items: [
-        { id: 'dossiers', label: 'Carnet de santé', icon: 'fas fa-folder-open', badge: 'Pa', route: '/patient/dossier' },
+        { id: 'dossiers', label: 'Carnet numérique', icon: 'fas fa-folder-open', badge: 'Pa', route: '/patient/dossier' },
         { id: 'examens', label: 'Mes examens', icon: 'fas fa-file-medical', route: '/examens' },
         { id: 'gestion-acces', label: 'Gestion des accès', icon: 'fas fa-shield-alt', badge: 'Pa', route: '/patient/gestion-acces' },
       ],
@@ -374,17 +374,17 @@ export const MENU_CONFIG: MenuConfig = {
     {
       section: 'Médicaments & Ordonnances',
       items: [
-        { id: 'medicaments', label: 'Mes médicaments', icon: 'fas fa-pills', badge: 'Pa', route: '/patient/medicaments' },
+        { id: 'medicaments', label: 'Mes traitements', icon: 'fas fa-pills', badge: 'Pa', route: '/patient/medicaments' },
         { id: 'ordonnances', label: 'Mes ordonnances', icon: 'fas fa-prescription', badge: 'Pa', route: '/patient/ordonnances' },
       ],
     },
     {
       section: 'Santé & Disponibilités',
       items: [
-        { id: 'etat', label: 'Suivi de santé', icon: 'fas fa-heartbeat', badge: 'Pa', route: '/patient/etat-sante' },
+        { id: 'etat', label: 'Suivi de santé', icon: 'fas fa-heartbeat', badge: 'Pa', route: '/patient/suivi-sante' },
         { id: 'rendez-vous', label: 'Rendez-vous', icon: 'fas fa-calendar-check', route: '/patient/rendez-vous' },
         { id: 'appel-video', label: 'Appel vidéo', icon: 'fas fa-video', route: '/patient/appel-video' },
-        { id: 'disponibilites', label: 'Centres de santé', icon: 'fas fa-map-marker-alt', route: '/patient/disponibilites' },
+        { id: 'disponibilites', label: 'Recherche de pharmacies', icon: 'fas fa-map-marker-alt', route: '/patient/disponibilites' },
       ],
     },
   ],

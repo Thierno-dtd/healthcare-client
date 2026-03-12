@@ -67,4 +67,4 @@ export { default as GestionAcces } from './components/GestionAcces';
 export { default as ExpertMedicalPatient } from './components/ExpertMedicalPatient';
 export { default as RendezVousPatient } from './components/PatientAppointments';
 export { default as OrdonnancesPatient } from './components/OrdonnancesPatient';
-export { default as DisponibilitesPatient } from './components/DisponibilitesPatient';
+export { default as DisponibilitesPatient } from './components/DisponibilitesPharmacy';

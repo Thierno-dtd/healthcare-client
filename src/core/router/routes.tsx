@@ -17,11 +17,11 @@ import HealthRecord from '@features/patient/components/HealthRecord';
 import PatientHealthTracking from '@/features/doctor/components/PatientHealthTracking';
 import PatientTreatments from '@/features/doctor/components/PatientTreatments';
 import PatientAppointments from '@/features/patient/components/PatientAppointments';
+import DisponibilitesPharmacy from '@/features/patient/components/DisponibilitesPharmacy';
 import {
   GestionAcces,
   OrdonnancesPatient,
   ExpertMedicalPatient,
-  DisponibilitesPatient,
 } from '@features/patient';
 import AppelVideoPatient from '@features/patient/components/AppelVideoPatient';
 import JournalAchatPharmacie from '@features/patient/components/JournalAchatPharmacie';
@@ -90,7 +90,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="patient/etat-sante"
+          path="patient/suivi-sante"
           element={
             <ProtectedRoute allowedRoles={['patient']}>
               <PatientHealthTracking />
@@ -109,7 +109,7 @@ const AppRoutes: React.FC = () => {
           path="patient/disponibilites"
           element={
             <ProtectedRoute allowedRoles={['patient']}>
-              <DisponibilitesPatient />
+              <DisponibilitesPharmacy />
             </ProtectedRoute>
           }
         />
@@ -145,14 +145,14 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="patient/expert-medical"
           element={
             <ProtectedRoute allowedRoles={['patient']}>
               <ExpertMedicalPatient />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="patient/appel-video"
           element={
