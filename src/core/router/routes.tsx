@@ -14,7 +14,7 @@ import Examens from '@features/examens/components/Examens';
 
 // Patient
 import HealthRecord from '@features/patient/components/HealthRecord';
-import PatientHealthTracking from '@/features/doctor/components/PatientHealthTracking';
+import PatientHealthTracking from '@/features/patient/components/PatientHealthTracking';
 import PatientTreatments from '@/features/doctor/components/PatientTreatments';
 import PatientAppointments from '@/features/patient/components/PatientAppointments';
 import DisponibilitesPharmacy from '@/features/patient/components/DisponibilitesPharmacy';

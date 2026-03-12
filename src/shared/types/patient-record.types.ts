@@ -56,6 +56,7 @@ export interface ConsultationRecord {
   heure: string;
   hopital: string;
   medecin: string;
+  medecinId: string;
   motif: string;
   diagnostic: string;
   typeArrivee: ConsultationType;
@@ -86,6 +87,7 @@ export interface HospitalisationRecord {
   bilanARealiser: string;
   prochainRdv: string;
   medecins: string[];
+  medecinIds: string[];
 }
 
 export type AnalyseStatus = 'Normal' | 'Anormal' | 'En attente';
@@ -93,11 +95,15 @@ export type AnalyseStatus = 'Normal' | 'Anormal' | 'En attente';
 export interface AnalyseRecord {
   id: string;
   patientId: string;
+  consultationId: string;
+  examPatientId: string;
   date: string;
   type: string;
   categorie: string;
   prescripteur: string;
+  medecinId: string;
   statut: AnalyseStatus;
+  effectuee: boolean;
   resultats: string;
   interpretation: string;
   valeursReference: string;
@@ -118,7 +124,9 @@ export interface OrdonnanceMedicamentRecord {
 export interface OrdonnanceRecord {
   id: string;
   patientId: string;
-  medecin: string;
+  consultationId?: string; // ← lien vers CONSULTATIONS
+  medecinId?: string;      // ← lien vers MEDECINS
+  medecin: string;         // nom dénormalisé
   date: string;
   statut: OrdonnanceStatut;
   medicaments: OrdonnanceMedicamentRecord[];
