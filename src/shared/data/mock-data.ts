@@ -366,7 +366,7 @@ export const MENU_CONFIG: MenuConfig = {
     {
       section: 'Dossiers & Examens',
       items: [
-        { id: 'dossiers', label: 'Mon dossier médical', icon: 'fas fa-folder-open', badge: 'Pa', route: '/patient/dossier' },
+        { id: 'dossiers', label: 'Carnet de santé', icon: 'fas fa-folder-open', badge: 'Pa', route: '/patient/dossier' },
         { id: 'examens', label: 'Mes examens', icon: 'fas fa-file-medical', route: '/examens' },
         { id: 'gestion-acces', label: 'Gestion des accès', icon: 'fas fa-shield-alt', badge: 'Pa', route: '/patient/gestion-acces' },
       ],
@@ -381,7 +381,7 @@ export const MENU_CONFIG: MenuConfig = {
     {
       section: 'Santé & Disponibilités',
       items: [
-        { id: 'etat', label: 'Mon état de santé', icon: 'fas fa-heartbeat', badge: 'Pa', route: '/patient/etat-sante' },
+        { id: 'etat', label: 'Suivi de santé', icon: 'fas fa-heartbeat', badge: 'Pa', route: '/patient/etat-sante' },
         { id: 'rendez-vous', label: 'Rendez-vous', icon: 'fas fa-calendar-check', route: '/patient/rendez-vous' },
         { id: 'appel-video', label: 'Appel vidéo', icon: 'fas fa-video', route: '/patient/appel-video' },
         { id: 'disponibilites', label: 'Centres de santé', icon: 'fas fa-map-marker-alt', route: '/patient/disponibilites' },
