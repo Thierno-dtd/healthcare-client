@@ -11,9 +11,11 @@ import LandingPage from '@features/landing/components/LandingPage';
 import { LoginPage } from '@features/auth';
 import Dashboard from '@features/dashboard/components/Dashboard';
 import Examens from '@features/examens/components/Examens';
+import ExamenDetail from '@features/examens/components/ExamenDetail';
 
 // Patient
 import HealthRecord from '@features/patient/components/HealthRecord';
+import HealthRecordDetail from '@features/patient/components/HealthRecordDetail';
 import PatientHealthTracking from '@/features/patient/components/PatientHealthTracking';
 import PatientTreatments from '@/features/doctor/components/PatientTreatments';
 import PatientAppointments from '@/features/patient/components/PatientAppointments';
@@ -23,7 +25,7 @@ import {
   OrdonnancesPatient,
   ExpertMedicalPatient,
 } from '@features/patient';
-import OrdonnanceDetail from '@features/patient/components/OrdonnanceDetail';
+import OrdonnanceDetail from '@/features/patient/components/OrdonnanceDetail';
 import AppelVideoPatient from '@features/patient/components/AppelVideoPatient';
 import JournalAchatPharmacie from '@features/patient/components/JournalAchatPharmacie';
 
@@ -80,7 +82,7 @@ const AppRoutes: React.FC = () => {
         {/* Common routes */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="examens" element={<Examens />} />
-        <Route path="examens/:examId" element={<Examens />} />
+        <Route path="examens/:examId" element={<ExamenDetail />} />
 
         {/* Patient routes */}
         <Route
@@ -88,6 +90,15 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['patient']}>
               <HealthRecord />
+            </ProtectedRoute>
+          }
+        />
+          {/* HealthRecord detail — route vers la page de détail d'un événement */}
+        <Route
+          path="patient/dossier/:eventId"
+          element={
+            <ProtectedRoute allowedRoles={['patient']}>
+              <HealthRecordDetail />
             </ProtectedRoute>
           }
         />

@@ -2,6 +2,8 @@
 // Types pour le dossier patient (médecin)
 // ============================================================
 
+import { Prescription } from "../data/mock-data";
+
 export type Gender = 'M' | 'F';
 
 export type PatientRecordTabId =

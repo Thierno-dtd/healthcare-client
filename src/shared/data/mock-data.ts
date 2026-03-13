@@ -403,117 +403,128 @@ export const EXAMENS_PATIENT: ExamenPatient[] = [
 ];
 
 /* ══════════════════════════════════════════════════════════════
-   SECTION 7.1 — EXAMS (vue patient)
-   Basé sur EXAMENS_PATIENT, adapté pour Exam
+   SECTION EXAMENS (compatible ExamenDetail.tsx / Examens.tsx)
+   IDs : EX001...  contextId : C001 | C002 | H001
 ══════════════════════════════════════════════════════════════ */
+
+export interface ExamResult {
+  dateResultat: string;
+  commentaireMedecin: string;
+  interpretation: string;
+  fichiers: { nom: string; type: 'pdf' | 'image' }[];
+}
 
 export interface Exam {
   id: string;
   patientId: string;
-  type: string;
+  nom: string;
   date: string;
-  status: 'planifie' | 'effectue' | 'annule' | 'en_attente';
-  medecin: string;
-  description: string;
-  resultat: string | null;
-  fichiers: string[];
+  lieu: string;
+  statut: 'Planifié' | 'Confirmé' | 'Reporté' | 'Réalisé' | 'Non réalisé';
+  dureeEstimee: string;
+  contexte: 'Consultation' | 'Hospitalisation';
+  contextId: string;
+  resultat?: ExamResult;
 }
 
-export const MOCK_EXAMS: Exam[] = [
+export const EXAMS: Exam[] = [
   {
-    id: 'exam_pat_001',
-    patientId: 'pat_001',
-    type: 'Prise de sang — Bilan biologique',
-    date: '2026-02-05',
-    status: 'effectue',
-    medecin: 'Dr. Jean Dupont',
-    description: 'Bilan post-consultation urgence — douleurs thoraciques',
-    resultat: 'Cholestérol légèrement élevé. Glycémie normale. Troponine négative.',
-    fichiers: ['bilan_sanguin_20260205.pdf'],
+    id: 'EX001', patientId: 'pat_001', nom: 'NFS (Numération Formule Sanguine)', date: '05/03/2026',
+    lieu: 'Laboratoire BioSanté, Paris', statut: 'Réalisé', dureeEstimee: '15 min',
+    contexte: 'Consultation', contextId: 'C001',
+    resultat: { dateResultat: '06/03/2026', commentaireMedecin: 'Résultats dans les limites normales', interpretation: 'Pas d\'anomalie détectée. Bilan sanguin satisfaisant.', fichiers: [{ nom: 'NFS_060326.pdf', type: 'pdf' }] }
   },
   {
-    id: 'exam_pat_002',
-    patientId: 'pat_001',
-    type: 'ECG — Électrocardiogramme',
-    date: '2026-03-15',
-    status: 'planifie',
-    medecin: 'Dr. Jean Dupont',
-    description: 'Suivi post-décompensation cardiaque',
-    resultat: null,
-    fichiers: [],
+    id: 'EX002', patientId: 'pat_001', nom: 'Fibroscopie gastrique', date: '20/03/2026',
+    lieu: 'CHU Saint-Louis, Paris', statut: 'Planifié', dureeEstimee: '30 min',
+    contexte: 'Consultation', contextId: 'C001',
   },
   {
-    id: 'exam_pat_003',
-    patientId: 'pat_001',
-    type: 'Échographie cardiaque',
-    date: '2026-04-10',
-    status: 'planifie',
-    medecin: 'Dr. Claire Martin',
-    description: 'Bilan à réaliser suite à hospitalisation (hosp_001)',
-    resultat: null,
-    fichiers: [],
+    id: 'EX003', patientId: 'pat_001', nom: 'Scanner abdominal', date: '12/06/2025',
+    lieu: 'CHU Saint-Louis, Paris', statut: 'Réalisé', dureeEstimee: '45 min',
+    contexte: 'Hospitalisation', contextId: 'H001',
+    resultat: { dateResultat: '12/06/2025', commentaireMedecin: 'Cholécystite chronique lithiasique confirmée', interpretation: 'Vésicule biliaire lithiasique avec épaississement pariétal modéré.', fichiers: [{ nom: 'Scanner_120625.pdf', type: 'pdf' }, { nom: 'Scanner_image.jpg', type: 'image' }] }
   },
   {
-    id: 'exam_pat_004',
-    patientId: 'pat_001',
-    type: 'Ionogramme sanguin',
-    date: '2024-09-15',
-    status: 'effectue',
-    medecin: 'Dr. Sophie Laurent',
-    description: 'Contrôle bilan ionique — suivi HTA',
-    resultat: 'Na 139 mmol/L, K 4.1 mmol/L — Résultats normaux.',
-    fichiers: ['ionogramme_20240915.pdf'],
+    id: 'EX004', patientId: 'pat_001', nom: 'Bilan lipidique complet', date: '15/01/2026',
+    lieu: 'Laboratoire Cerba, Boulogne', statut: 'Réalisé', dureeEstimee: '10 min',
+    contexte: 'Consultation', contextId: 'C002',
+    resultat: { dateResultat: '16/01/2026', commentaireMedecin: 'Bilan lipidique satisfaisant', interpretation: 'Tous les paramètres sont dans les normes.', fichiers: [{ nom: 'Bilan_lipidique.pdf', type: 'pdf' }] }
+  },
+  {
+    id: 'EX005', patientId: 'pat_001', nom: 'Radio pulmonaire', date: '20/09/2025',
+    lieu: 'Clinique du Parc, Paris', statut: 'Réalisé', dureeEstimee: '10 min',
+    contexte: 'Consultation', contextId: 'C001',
+  },
+  {
+    id: 'EX006', patientId: 'pat_001', nom: 'IRM cérébrale', date: '10/04/2026',
+    lieu: 'Centre d\'Imagerie Médicale, Lyon', statut: 'Confirmé', dureeEstimee: '45 min',
+    contexte: 'Consultation', contextId: 'C001',
+  },
+  {
+    id: 'EX007', patientId: 'pat_001', nom: 'Bilan hépatique', date: '01/07/2025',
+    lieu: 'Laboratoire BioSanté, Paris', statut: 'Reporté', dureeEstimee: '15 min',
+    contexte: 'Hospitalisation', contextId: 'H001',
   },
 ];
 
 /* ══════════════════════════════════════════════════════════════
-   SECTION 8 — ORDONNANCES
-   Liées à une consultation (consultationId).
-   Cliquer sur une ordonnance dans HealthRecord → PatientPrescriptions.
+   SECTION ORDONNANCES PATIENT (compatible OrdonnancePatientDetail.tsx / OrdonnancesPatient.tsx)
+   IDs : ORD001...  contextId : C001 | C002 | H001
 ══════════════════════════════════════════════════════════════ */
 
-export const ORDONNANCES_RECORD: OrdonnanceRecord[] = [
+export interface MedicamentPrescrit {
+  nom: string;
+  dosage: string;
+  forme: string;
+  posologie: string;
+  duree: string;
+  instructions: string;
+  achete: boolean;
+}
+
+export interface Prescription {
+  id: string;
+  medecin: string;
+  patientId: string;
+  date: string;
+  contexte: 'Consultation' | 'Hospitalisation';
+  contextId: string;
+  status: string;
+  medicaments: MedicamentPrescrit[];
+}
+
+export const PRESCRIPTIONS: Prescription[] = [
   {
-    id: 'ord_001',
-    patientId: 'pat_001',
-    consultationId: 'cons_001',
-    medecin: 'Dr. Jean Dupont',
-    medecinId: 'med_001',
-    date: '2026-02-20',
-    statut: 'Active',
+    id: 'ORD001', medecin: 'Dr. Martin Dupont', patientId: 'pat_001', date: '05/03/2026',
+    contexte: 'Consultation', contextId: 'C001', status: 'Active',
     medicaments: [
-      { nom: 'Aspirine',       dosage: '75mg',  forme: 'Comprimé', posologie: '1 comprimé/j le matin', duree: '30 jours' },
-      { nom: 'Atorvastatine',  dosage: '20mg',  forme: 'Comprimé', posologie: '1 comprimé/j le soir',  duree: '30 jours' },
-      { nom: 'Bisoprolol',     dosage: '2.5mg', forme: 'Comprimé', posologie: '1 comprimé/j le matin', duree: '30 jours' },
+      { nom: 'Oméprazole',  dosage: '20mg',  forme: 'Gélule', posologie: '1 gélule le matin à jeun',   duree: '28 jours', instructions: 'À prendre 30 min avant le petit-déjeuner', achete: true },
+      { nom: 'Gaviscon',    dosage: '500mg', forme: 'Sachet', posologie: '1 sachet après les 3 repas', duree: '14 jours', instructions: 'Bien agiter avant utilisation',            achete: false },
     ],
-    instructions: 'Prendre après les repas. Ne pas interrompre sans avis médical.',
   },
   {
-    id: 'ord_002',
-    patientId: 'pat_001',
-    consultationId: 'cons_001',
-    medecin: 'Dr. Jean Dupont',
-    medecinId: 'med_001',
-    date: '2026-03-01',
-    statut: 'Active',
+    id: 'ORD002', medecin: 'Dr. Sophie Laurent', patientId: 'pat_001', date: '15/01/2026',
+    contexte: 'Consultation', contextId: 'C002', status: 'Active',
     medicaments: [
-      { nom: 'Furosémide', dosage: '40mg', forme: 'Comprimé', posologie: '1 comprimé/j le matin', duree: '60 jours' },
-      { nom: 'Ramipril',   dosage: '5mg',  forme: 'Comprimé', posologie: '1 comprimé/j le soir',  duree: '60 jours' },
+      { nom: 'Amlodipine', dosage: '5mg', forme: 'Comprimé', posologie: '1 comprimé le matin', duree: '6 mois', instructions: 'Ne pas interrompre sans avis médical', achete: true },
     ],
-    instructions: 'Surveiller la tension quotidiennement. Éviter l\'automédication.',
   },
   {
-    id: 'ord_003',
-    patientId: 'pat_001',
-    consultationId: 'cons_002',
-    medecin: 'Dr. Sophie Laurent',
-    medecinId: 'med_002',
-    date: '2024-09-12',
-    statut: 'Terminée',
+    id: 'ORD003', medecin: 'Dr. Martin Dupont', patientId: 'pat_001', date: '20/09/2025',
+    contexte: 'Consultation', contextId: 'C001', status: 'Active',
     medicaments: [
-      { nom: 'Amlodipine', dosage: '5mg', forme: 'Comprimé', posologie: '1 comprimé/j', duree: '90 jours' },
+      { nom: 'Paracétamol',   dosage: '1g',    forme: 'Comprimé', posologie: '1 comprimé toutes les 6h si fièvre', duree: '5 jours', instructions: 'Ne pas dépasser 4g par jour', achete: true },
+      { nom: 'Carbocistéine', dosage: '750mg', forme: 'Sirop',    posologie: '1 cuillère à soupe 3x/jour',         duree: '7 jours', instructions: 'À prendre après les repas',   achete: true },
     ],
-    instructions: 'À prendre à heure fixe.',
+  },
+  {
+    id: 'ORD004', medecin: 'Dr. Jean Moreau', patientId: 'pat_001', date: '16/06/2025',
+    contexte: 'Hospitalisation', contextId: 'H001', status: 'Terminée',
+    medicaments: [
+      { nom: 'Paracétamol', dosage: '1g',   forme: 'Comprimé', posologie: '1 comprimé toutes les 6h', duree: '5 jours',  instructions: 'Si douleur', achete: false },
+      { nom: 'Pantoprazole',dosage: '40mg', forme: 'Comprimé', posologie: '1 comprimé le matin',       duree: '14 jours', instructions: 'À jeun',     achete: false },
+    ],
   },
 ];
 
@@ -855,12 +866,12 @@ export const MESURES_SANTE: MesureSante[] = [
 
 
 /** Ordonnances d'un patient */
-export const getOrdonnancesForPatient = (patientId: string): OrdonnanceRecord[] =>
-  ORDONNANCES_RECORD.filter((o) => o.patientId === patientId);
+export const getOrdonnancesForPatient = (patientId: string): Prescription[] =>
+  PRESCRIPTIONS.filter((o) => o.patientId === patientId);
 
 /** Examens d'un patient */
 export const getExamsForPatient = (patientId: string): Exam[] =>
-  MOCK_EXAMS.filter((e) => e.patientId === patientId);
+  EXAMS.filter((e) => e.patientId === patientId);
 
 /** Prescriptions d'un patient */
 export const getPrescriptionsForPatient = (patientId: string): PrescriptionData[] =>
@@ -1041,3 +1052,31 @@ export const hasAccessToRoute = (userRole: string, route: string): boolean => {
   if (!menu) return false;
   return menu.some((section) => section.items.some((item) => item.route === route));
 };
+
+
+/** Examens prescrits lors d'une consultation spécifique */
+export const getExamensForConsultation = (consultationId: string): ExamenPatient[] =>
+  EXAMENS_PATIENT.filter((e) => e.consultationId === consultationId);
+ 
+/** Ordonnances émises lors d'une consultation spécifique */
+export const getOrdonnancesForConsultation = (consultationId: string): Prescription[] =>
+  PRESCRIPTIONS.filter(
+    (o) => o.contexte === "Consultation" && o.contextId === consultationId
+  );
+ 
+/** Retrouve un événement (consultation OU hospitalisation) par son ID */
+export const getTimelineEvent = (eventId: string): {
+  type: 'consultation' | 'hospitalisation';
+  data: ConsultationRecord | HospitalisationRecord;
+} | undefined => {
+  const consultation = CONSULTATIONS.find((c) => c.id === eventId);
+  if (consultation) return { type: 'consultation', data: consultation };
+  const hospitalisation = HOSPITALISATIONS.find((h) => h.id === eventId);
+  if (hospitalisation) return { type: 'hospitalisation', data: hospitalisation };
+  return undefined;
+};
+ 
+/** Examens liés à une hospitalisation (via les médecins impliqués ou le motif) */
+export const getExamensForHospitalisation = (hospitalisationId: string): ExamenPatient[] =>
+  EXAMENS_PATIENT.filter((e) => e.consultationId === hospitalisationId);
+ 
