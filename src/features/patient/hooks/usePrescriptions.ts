@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { prescriptionService } from '../services/prescription.service';
-import type { PrescriptionData } from '../types/ordonnance.types';
+import type { PrescriptionData } from '../types/prescription.types';
 
 export const prescriptionKeys = {
   all: ['prescriptions'] as const,

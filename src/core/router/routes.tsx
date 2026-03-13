@@ -23,6 +23,7 @@ import {
   OrdonnancesPatient,
   ExpertMedicalPatient,
 } from '@features/patient';
+import OrdonnanceDetail from '@features/patient/components/OrdonnanceDetail';
 import AppelVideoPatient from '@features/patient/components/AppelVideoPatient';
 import JournalAchatPharmacie from '@features/patient/components/JournalAchatPharmacie';
 
@@ -142,7 +143,7 @@ const AppRoutes: React.FC = () => {
           path="patient/ordonnances/:ordonnanceId"
           element={
             <ProtectedRoute allowedRoles={['patient']}>
-              <OrdonnancesPatient />
+              <OrdonnanceDetail />
             </ProtectedRoute>
           }
         />

@@ -43,10 +43,29 @@ export const ordonnancePatientService = {
   getOrdonnance: async (ordonnanceId: string): Promise<OrdonnancePatient> => {
     // TODO: return apiGet<OrdonnancePatient>(`/ordonnances/${ordonnanceId}`);
     await new Promise((r) => setTimeout(r, 300));
-    const ordonnances = await ordonnancePatientService.getOrdonnances('');
-    const found = ordonnances.find((o) => o.id === ordonnanceId);
-    if (!found) throw new Error('Ordonnance introuvable');
-    return found;
+    const { ORDONNANCES_RECORD } = await import('@shared/data/mock-data');
+    const ord = ORDONNANCES_RECORD.find((o) => o.id === ordonnanceId);
+    if (!ord) throw new Error('Ordonnance introuvable');
+    return {
+      id: ord.id,
+      medecinNom: ord.medecin,
+      specialite: 'Médecine générale',
+      dateCreation: ord.date,
+      dateExpiration: '',
+      status: (ord.statut.toLowerCase() as any) || 'active',
+      qrStatus: 'valide',
+      medicaments: ord.medicaments.map((m, idx) => ({
+        id: `${ord.id}_med_${idx}`,
+        nom: m.nom,
+        dosage: m.dosage,
+        frequence: '',
+        duree: m.duree,
+        instructions: ord.instructions || '',
+        pris: false,
+      })),
+      notes: ord.instructions,
+      qrCode: undefined,
+    };
   },
 
   /**

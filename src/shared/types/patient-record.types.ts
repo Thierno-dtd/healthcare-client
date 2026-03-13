@@ -11,7 +11,6 @@ export type PatientRecordTabId =
   | 'analyses'
   | 'ordonnances'
   | 'antecedents'
-  | 'depenses'
   | 'timeline';
 
 export interface TimelineEvent {
@@ -132,14 +131,4 @@ export interface OrdonnanceRecord {
   medicaments: OrdonnanceMedicamentRecord[];
   instructions?: string;
   documentUrl?: string;
-}
-
-export interface DepenseRecord {
-  id: string;
-  patientId: string;
-  date: string;
-  montant: string;
-  categorie: string;
-  description: string;
-  payeur: string;
 }

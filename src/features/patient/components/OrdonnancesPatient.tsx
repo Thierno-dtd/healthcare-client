@@ -1,16 +1,63 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from 'react-router-dom';
-import { CONSULTATIONS, HOSPITALISATIONS } from "@shared/data/mock-data"; // context label lookup
+import { useState } from "react";
+import { CONSULTATIONS, HOSPITALISATIONS } from "@shared/data/mock-data";
 import {
   Pill, Eye, ArrowLeft, Calendar, User, Stethoscope, Building2, ShoppingCart,
   CheckCircle, Clock, AlertCircle, Package, Search, Filter
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { usePrescriptions } from "../hooks/usePrescriptions";
-import type { PrescriptionData, PurchaseStatus, MedicamentWithPurchase } from "../types/ordonnance.types";
+/* ─── Types ─── */
+type PurchaseStatus = "Non achetés" | "Partiellement achetés" | "Tous achetés";
 
-/* ─── Data is fetched through hook/service */
+interface MedicamentWithPurchase {
+  nom: string;
+  dosage: string;
+  forme: string;
+  posologie: string;
+  duree: string;
+  instructions: string;
+  achete: boolean;
+}
+
+interface PrescriptionData {
+  id: string;
+  medecin: string;
+  date: string;
+  contexte: "Consultation" | "Hospitalisation";
+  contextId: string;
+  medicaments: MedicamentWithPurchase[];
+}
+
+/* ─── Mock data ─── */
+const mockPrescriptions: PrescriptionData[] = [
+  {
+    id: "ORD001", medecin: "Dr. Martin Dupont", date: "05/03/2026", contexte: "Consultation", contextId: "C001",
+    medicaments: [
+      { nom: "Oméprazole", dosage: "20mg", forme: "Gélule", posologie: "1 gélule le matin à jeun", duree: "28 jours", instructions: "À prendre 30 min avant le petit-déjeuner", achete: true },
+      { nom: "Gaviscon", dosage: "500mg", forme: "Sachet", posologie: "1 sachet après les 3 repas", duree: "14 jours", instructions: "Bien agiter avant utilisation", achete: false },
+    ]
+  },
+  {
+    id: "ORD002", medecin: "Dr. Sophie Laurent", date: "15/01/2026", contexte: "Consultation", contextId: "C002",
+    medicaments: [
+      { nom: "Amlodipine", dosage: "5mg", forme: "Comprimé", posologie: "1 comprimé le matin", duree: "6 mois", instructions: "Ne pas interrompre sans avis médical", achete: true },
+    ]
+  },
+  {
+    id: "ORD003", medecin: "Dr. Martin Dupont", date: "20/09/2025", contexte: "Consultation", contextId: "C003",
+    medicaments: [
+      { nom: "Paracétamol", dosage: "1g", forme: "Comprimé", posologie: "1 comprimé toutes les 6h si fièvre", duree: "5 jours", instructions: "Ne pas dépasser 4g par jour", achete: true },
+      { nom: "Carbocistéine", dosage: "750mg", forme: "Sirop", posologie: "1 cuillère à soupe 3x/jour", duree: "7 jours", instructions: "À prendre après les repas", achete: true },
+    ]
+  },
+  {
+    id: "ORD004", medecin: "Dr. Jean Moreau", date: "16/06/2025", contexte: "Hospitalisation", contextId: "H001",
+    medicaments: [
+      { nom: "Paracétamol", dosage: "1g", forme: "Comprimé", posologie: "1 comprimé toutes les 6h", duree: "5 jours", instructions: "Si douleur", achete: false },
+      { nom: "Pantoprazole", dosage: "40mg", forme: "Comprimé", posologie: "1 comprimé le matin", duree: "14 jours", instructions: "À jeun", achete: false },
+    ]
+  },
+];
 
 /* ─── Helpers ─── */
 const getPurchaseStatus = (meds: MedicamentWithPurchase[]): PurchaseStatus => {
@@ -67,29 +114,13 @@ const ProgressBar = ({ bought, total }: { bought: number; total: number }) => (
    MAIN COMPONENT
 ════════════════════════════════════════════ */
 const OrdonnancesPatient = () => {
-  const patientId = 'pat_001';
-  const { ordonnanceId } = useParams<{ ordonnanceId?: string }>();
-  const navigate = useNavigate();
-  const { data: prescriptions = [], isLoading } = usePrescriptions(patientId);
-  const [localPrescriptions, setLocalPrescriptions] = useState<PrescriptionData[]>([]);
-  React.useEffect(() => {
-    setLocalPrescriptions(prescriptions);
-  }, [prescriptions]);
-
-  // open selected when route param present
-  useEffect(() => {
-    if (ordonnanceId && localPrescriptions.length) {
-      const found = localPrescriptions.find((p) => p.id === ordonnanceId);
-      if (found) setSelected(found);
-    }
-  }, [ordonnanceId, localPrescriptions]);
-
+  const [prescriptions, setPrescriptions] = useState<PrescriptionData[]>(mockPrescriptions);
   const [selected, setSelected]           = useState<PrescriptionData | null>(null);
   const [filterStatus, setFilterStatus]   = useState("all");
   const [searchQuery, setSearchQuery]     = useState("");
   const [hoveredId, setHoveredId]         = useState<string | null>(null);
 
-  const filtered = localPrescriptions.filter((p) => {
+  const filtered = prescriptions.filter((p) => {
     const status = getPurchaseStatus(p.medicaments);
     const matchStatus = filterStatus === "all" || status === filterStatus;
     const matchSearch =
@@ -105,14 +136,14 @@ const OrdonnancesPatient = () => {
       meds[medIndex] = { ...meds[medIndex], achete: !meds[medIndex].achete };
       return { ...p, medicaments: meds };
     };
-    setLocalPrescriptions((prev) => prev.map(update));
+    setPrescriptions((prev) => prev.map(update));
     setSelected((prev) => (prev ? update(prev) : null));
   };
 
   const markAllPurchased = (prescId: string) => {
     const update = (p: PrescriptionData) =>
       p.id === prescId ? { ...p, medicaments: p.medicaments.map((m) => ({ ...m, achete: true })) } : p;
-    setLocalPrescriptions((prev) => prev.map(update));
+    setPrescriptions((prev) => prev.map(update));
     setSelected((prev) => (prev ? update(prev) : null));
   };
 
@@ -126,10 +157,10 @@ const OrdonnancesPatient = () => {
   };
 
   const stats = [
-    { label: "Total",            value: localPrescriptions.length,                                                                     color: "#163344", bg: "#f1f5f9" },
-    { label: "Tous achetés",     value: localPrescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Tous achetés").length,  color: "#10b981", bg: "#ecfdf5" },
-    { label: "Partiellement",    value: localPrescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Partiellement achetés").length, color: "#f59e0b", bg: "#fffbeb" },
-    { label: "Non achetés",      value: localPrescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Non achetés").length,   color: "#ef4444", bg: "#fef2f2" },
+    { label: "Total",            value: prescriptions.length,                                                                     color: "#163344", bg: "#f1f5f9" },
+    { label: "Tous achetés",     value: prescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Tous achetés").length,  color: "#10b981", bg: "#ecfdf5" },
+    { label: "Partiellement",    value: prescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Partiellement achetés").length, color: "#f59e0b", bg: "#fffbeb" },
+    { label: "Non achetés",      value: prescriptions.filter((p) => getPurchaseStatus(p.medicaments) === "Non achetés").length,   color: "#ef4444", bg: "#fef2f2" },
   ];
 
   /* ════ DETAIL VIEW ════ */
@@ -141,13 +172,7 @@ const OrdonnancesPatient = () => {
       <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
         {/* Back */}
-        <button onClick={() => {
-          if (ordonnanceId) {
-            navigate('/patient/dossier');
-          } else {
-            setSelected(null);
-          }
-        }} style={{
+        <button onClick={() => setSelected(null)} style={{
           display: "flex", alignItems: "center", gap: 6, fontSize: "0.875rem",
           fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0,
         }}>

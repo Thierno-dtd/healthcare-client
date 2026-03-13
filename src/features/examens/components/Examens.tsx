@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { CONSULTATIONS, HOSPITALISATIONS } from "@shared/data/mock-data"; // keep these for context label lookup
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { CONSULTATIONS, HOSPITALISATIONS } from "@shared/data/mock-data";
 import {
   TestTube, Plus, Eye, FileText, Calendar, MapPin, Clock, Stethoscope, Building2,
   Upload, CheckCircle, XCircle, AlertTriangle, ArrowLeft, Image as ImageIcon,
@@ -8,10 +7,63 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { useExams } from "../hooks/useExams";
-import type { Exam, ExamStatus, ExamContext, ExamResult } from "../types/exam.types";
+/* ─── Types ─── */
+type ExamStatus = "Planifié" | "Confirmé" | "Reporté" | "Réalisé" | "Non réalisé";
+type ExamContext = "Consultation" | "Hospitalisation";
 
-/* ─── Mock data is now provided by hook/service */
+interface ExamResult {
+  dateResultat: string;
+  commentaireMedecin: string;
+  interpretation: string;
+  fichiers: { nom: string; type: "pdf" | "image" }[];
+}
+
+interface Exam {
+  id: string;
+  nom: string;
+  date: string;
+  lieu: string;
+  statut: ExamStatus;
+  dureeEstimee: string;
+  contexte: ExamContext;
+  contextId: string;
+  resultat?: ExamResult;
+}
+
+/* ─── Mock data ─── */
+const mockExams: Exam[] = [
+  {
+    id: "EX001", nom: "NFS (Numération Formule Sanguine)", date: "05/03/2026", lieu: "Laboratoire BioSanté, Paris",
+    statut: "Réalisé", dureeEstimee: "15 min", contexte: "Consultation", contextId: "C001",
+    resultat: { dateResultat: "06/03/2026", commentaireMedecin: "Résultats dans les limites normales", interpretation: "Pas d'anomalie détectée. Bilan sanguin satisfaisant.", fichiers: [{ nom: "NFS_060326.pdf", type: "pdf" }] }
+  },
+  {
+    id: "EX002", nom: "Fibroscopie gastrique", date: "20/03/2026", lieu: "CHU Saint-Louis, Paris",
+    statut: "Planifié", dureeEstimee: "30 min", contexte: "Consultation", contextId: "C001"
+  },
+  {
+    id: "EX003", nom: "Scanner abdominal", date: "12/06/2025", lieu: "CHU Saint-Louis, Paris",
+    statut: "Réalisé", dureeEstimee: "45 min", contexte: "Hospitalisation", contextId: "H001",
+    resultat: { dateResultat: "12/06/2025", commentaireMedecin: "Cholécystite chronique lithiasique confirmée", interpretation: "Vésicule biliaire lithiasique avec épaississement pariétal modéré.", fichiers: [{ nom: "Scanner_120625.pdf", type: "pdf" }, { nom: "Scanner_image.jpg", type: "image" }] }
+  },
+  {
+    id: "EX004", nom: "Bilan lipidique complet", date: "15/01/2026", lieu: "Laboratoire Cerba, Boulogne",
+    statut: "Réalisé", dureeEstimee: "10 min", contexte: "Consultation", contextId: "C002",
+    resultat: { dateResultat: "16/01/2026", commentaireMedecin: "Bilan lipidique satisfaisant", interpretation: "Tous les paramètres sont dans les normes.", fichiers: [{ nom: "Bilan_lipidique.pdf", type: "pdf" }] }
+  },
+  {
+    id: "EX005", nom: "Radio pulmonaire", date: "20/09/2025", lieu: "Clinique du Parc, Paris",
+    statut: "Réalisé", dureeEstimee: "10 min", contexte: "Consultation", contextId: "C003"
+  },
+  {
+    id: "EX006", nom: "IRM cérébrale", date: "10/04/2026", lieu: "Centre d'Imagerie Médicale, Lyon",
+    statut: "Confirmé", dureeEstimee: "45 min", contexte: "Consultation", contextId: "C001"
+  },
+  {
+    id: "EX007", nom: "Bilan hépatique", date: "01/07/2025", lieu: "Laboratoire BioSanté, Paris",
+    statut: "Reporté", dureeEstimee: "15 min", contexte: "Hospitalisation", contextId: "H001"
+  },
+];
 
 /* ─── Status config ─── */
 const STATUS_CFG: Record<ExamStatus, { color: string; bg: string; border: string; icon: React.ReactNode }> = {
@@ -46,26 +98,7 @@ const StatusBadge = ({ statut }: { statut: ExamStatus }) => {
    MAIN COMPONENT
 ════════════════════════════════════════════ */
 const Examens = () => {
-  // TODO: replace hard-coded patientId with auth/context
-  const patientId = 'pat_001';
-  const { examId } = useParams<{ examId?: string }>();
-  const navigate = useNavigate();
-  const { data: exams = [], isLoading } = useExams(patientId);
-
-  // keep a local copy when the hook returns data so that we can update status within the UI
-  const [localExams, setLocalExams] = useState<Exam[]>([]);
-  React.useEffect(() => {
-    setLocalExams(exams);
-  }, [exams]);
-
-  // if url contains examId, set selectedExam when data arrives
-  useEffect(() => {
-    if (examId && exams.length) {
-      const found = exams.find((e) => e.id === examId);
-      if (found) setSelectedExam(found);
-    }
-  }, [examId, exams]);
-
+  const [exams, setExams]                   = useState<Exam[]>(mockExams);
   const [selectedExam, setSelectedExam]     = useState<Exam | null>(null);
   const [filterStatus, setFilterStatus]     = useState<string>("all");
   const [searchQuery, setSearchQuery]       = useState("");
@@ -79,7 +112,7 @@ const Examens = () => {
     statut: "Planifié" as ExamStatus, contexte: "Consultation" as ExamContext, contextId: "",
   });
 
-  const filteredExams = localExams.filter((e) => {
+  const filteredExams = exams.filter((e) => {
     const matchStatus = filterStatus === "all" || e.statut === filterStatus;
     const matchSearch = e.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.lieu.toLowerCase().includes(searchQuery.toLowerCase());
@@ -87,14 +120,14 @@ const Examens = () => {
   });
 
   const handleAddExam = () => {
-    // for now operate on local state because service is read-only
     if (!newExam.nom || !newExam.date) return;
-    setSelectedExam(null);
-    // could dispatch mutation to service when API is ready
+    setExams((prev) => [{ ...newExam, id: `EX${String(prev.length + 1).padStart(3, "0")}` }, ...prev]);
+    setNewExam({ nom: "", lieu: "", date: "", dureeEstimee: "", statut: "Planifié", contexte: "Consultation", contextId: "" });
+    setShowAddModal(false);
   };
 
   const handleStatusChange = (examId: string, newStatus: ExamStatus) => {
-    setLocalExams((prev) => prev.map((e) => e.id === examId ? { ...e, statut: newStatus } : e));
+    setExams((prev) => prev.map((e) => e.id === examId ? { ...e, statut: newStatus } : e));
     setSelectedExam((prev) => prev?.id === examId ? { ...prev, statut: newStatus } : prev);
   };
 
@@ -123,13 +156,7 @@ const Examens = () => {
       <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
         {/* Back */}
-        <button onClick={() => {
-          if (examId) {
-            navigate('/patient/dossier');
-          } else {
-            setSelectedExam(null);
-          }
-        }} style={{
+        <button onClick={() => setSelectedExam(null)} style={{
           display: "flex", alignItems: "center", gap: 6, fontSize: "0.875rem",
           fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0,
         }}>
@@ -183,8 +210,8 @@ const Examens = () => {
             </div>
 
             {/* Context card */}
-            <div style={card} onClick={() => navigate('/patient/dossier')}>
-              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937", cursor: 'pointer' }}>
+            <div style={card}>
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 700, fontSize: "0.9375rem", color: "#1f2937" }}>
                 Contexte médical
               </div>
               <div style={{ padding: "1.25rem 1.5rem" }}>
@@ -331,7 +358,7 @@ const Examens = () => {
         {/* Result modal */}
         <ResultModal
           open={showResultModal} onClose={() => setShowResultModal(false)}
-          examId={resultExamId} exams={localExams} setExams={setLocalExams} setSelectedExam={setSelectedExam}
+          examId={resultExamId} exams={exams} setExams={setExams} setSelectedExam={setSelectedExam}
         />
 
         {/* Responsive grid */}
@@ -600,7 +627,7 @@ const Examens = () => {
       {/* ─── Result Modal ─── */}
       <ResultModal
         open={showResultModal} onClose={() => setShowResultModal(false)}
-        examId={resultExamId} exams={localExams} setExams={setLocalExams} setSelectedExam={setSelectedExam}
+        examId={resultExamId} exams={exams} setExams={setExams} setSelectedExam={setSelectedExam}
       />
     </div>
   );

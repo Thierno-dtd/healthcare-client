@@ -37,12 +37,33 @@ export type {
   RappelMedicament,
 } from './types/patient.types';
 
+export type {
+  Exam,
+  ExamStatus,
+  Priorite,
+  ExamContext,
+  ExamResult,
+} from './types/exam.types';
+
+export type {
+  PrescriptionData,
+  MedicamentWithPurchase,
+  PurchaseStatus,
+} from './types/prescription.types';
+
+export type {
+  RendezVous as RendezVousAlt, // avoid duplicate
+  CreateRendezVousDTO as CreateRendezVousDTOAlt,
+  UpdateRendezVousDTO as UpdateRendezVousDTOAlt,
+} from './types/rendez-vous.types';
+
 // Services
 export { etatSanteService } from './services/etat-sante.service';
 export { rendezVousService } from './services/rendez-vous.service';
 export { ordonnancePatientService } from './services/ordonnance-patient.service';
 export { healthRecordService } from './services/healthRecord.service';
 export { prescriptionService } from './services/prescription.service';
+export { examService } from './services/exam.service';
 export { healthCenterService } from './services/health-center.service';
 export { expertMedicalService } from './services/expert-medical.service';
 export { medicamentService } from './services/medicament.service';

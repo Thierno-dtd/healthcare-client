@@ -12,7 +12,7 @@ import type {
 } from '@shared/types/medical.types';
 import type {
   PatientRecord, ConsultationRecord, HospitalisationRecord,
-  AnalyseRecord, OrdonnanceRecord, DepenseRecord,
+  AnalyseRecord, OrdonnanceRecord,
 } from '@shared/types/patient-record.types';
 import type { DashboardCard, MenuConfig, MenuSection } from '@shared/types/common.types';
 
@@ -403,6 +403,70 @@ export const EXAMENS_PATIENT: ExamenPatient[] = [
 ];
 
 /* ══════════════════════════════════════════════════════════════
+   SECTION 7.1 — EXAMS (vue patient)
+   Basé sur EXAMENS_PATIENT, adapté pour Exam
+══════════════════════════════════════════════════════════════ */
+
+export interface Exam {
+  id: string;
+  patientId: string;
+  type: string;
+  date: string;
+  status: 'planifie' | 'effectue' | 'annule' | 'en_attente';
+  medecin: string;
+  description: string;
+  resultat: string | null;
+  fichiers: string[];
+}
+
+export const MOCK_EXAMS: Exam[] = [
+  {
+    id: 'exam_pat_001',
+    patientId: 'pat_001',
+    type: 'Prise de sang — Bilan biologique',
+    date: '2026-02-05',
+    status: 'effectue',
+    medecin: 'Dr. Jean Dupont',
+    description: 'Bilan post-consultation urgence — douleurs thoraciques',
+    resultat: 'Cholestérol légèrement élevé. Glycémie normale. Troponine négative.',
+    fichiers: ['bilan_sanguin_20260205.pdf'],
+  },
+  {
+    id: 'exam_pat_002',
+    patientId: 'pat_001',
+    type: 'ECG — Électrocardiogramme',
+    date: '2026-03-15',
+    status: 'planifie',
+    medecin: 'Dr. Jean Dupont',
+    description: 'Suivi post-décompensation cardiaque',
+    resultat: null,
+    fichiers: [],
+  },
+  {
+    id: 'exam_pat_003',
+    patientId: 'pat_001',
+    type: 'Échographie cardiaque',
+    date: '2026-04-10',
+    status: 'planifie',
+    medecin: 'Dr. Claire Martin',
+    description: 'Bilan à réaliser suite à hospitalisation (hosp_001)',
+    resultat: null,
+    fichiers: [],
+  },
+  {
+    id: 'exam_pat_004',
+    patientId: 'pat_001',
+    type: 'Ionogramme sanguin',
+    date: '2024-09-15',
+    status: 'effectue',
+    medecin: 'Dr. Sophie Laurent',
+    description: 'Contrôle bilan ionique — suivi HTA',
+    resultat: 'Na 139 mmol/L, K 4.1 mmol/L — Résultats normaux.',
+    fichiers: ['ionogramme_20240915.pdf'],
+  },
+];
+
+/* ══════════════════════════════════════════════════════════════
    SECTION 8 — ORDONNANCES
    Liées à une consultation (consultationId).
    Cliquer sur une ordonnance dans HealthRecord → PatientPrescriptions.
@@ -450,6 +514,65 @@ export const ORDONNANCES_RECORD: OrdonnanceRecord[] = [
       { nom: 'Amlodipine', dosage: '5mg', forme: 'Comprimé', posologie: '1 comprimé/j', duree: '90 jours' },
     ],
     instructions: 'À prendre à heure fixe.',
+  },
+];
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION 8.1 — PRESCRIPTIONS (vue patient)
+   Basé sur ORDONNANCES_RECORD, adapté pour PrescriptionData
+══════════════════════════════════════════════════════════════ */
+
+export interface MedicamentWithPurchase {
+  nom: string;
+  dosage: string;
+  forme: string;
+  posologie: string;
+  duree: string;
+  instructions: string;
+  achete: boolean;
+}
+
+export interface PrescriptionData {
+  id: string;
+  patientId: string;
+  ordonnanceId: string;
+  medecin: string;
+  date: string;
+  contexte: "Consultation" | "Hospitalisation";
+  contextId: string;
+  status: string;
+}
+
+export const MOCK_PRESCRIPTIONS: PrescriptionData[] = [
+  {
+    id: 'pres_001',
+    patientId: 'pat_001',
+    ordonnanceId: 'ord_001',
+    medecin: 'Dr. Jean Dupont',
+    date: '2026-02-20',
+    contexte: 'Consultation',
+    contextId: 'cons_001',
+    status: 'Active',
+  },
+  {
+    id: 'pres_002',
+    patientId: 'pat_001',
+    ordonnanceId: 'ord_002',
+    medecin: 'Dr. Jean Dupont',
+    date: '2026-03-01',
+    contexte: 'Consultation',
+    contextId: 'cons_001',
+    status: 'Active',
+  },
+  {
+    id: 'pres_003',
+    patientId: 'pat_001',
+    ordonnanceId: 'ord_003',
+    medecin: 'Dr. Sophie Laurent',
+    date: '2024-09-12',
+    contexte: 'Consultation',
+    contextId: 'cons_002',
+    status: 'Terminée',
   },
 ];
 
@@ -735,6 +858,26 @@ export const MESURES_SANTE: MesureSante[] = [
 export const getOrdonnancesForPatient = (patientId: string): OrdonnanceRecord[] =>
   ORDONNANCES_RECORD.filter((o) => o.patientId === patientId);
 
+/** Examens d'un patient */
+export const getExamsForPatient = (patientId: string): Exam[] =>
+  MOCK_EXAMS.filter((e) => e.patientId === patientId);
+
+/** Prescriptions d'un patient */
+export const getPrescriptionsForPatient = (patientId: string): PrescriptionData[] =>
+  MOCK_PRESCRIPTIONS.filter((p) => p.patientId === patientId);
+
+/** Patient record */
+export const getPatientRecord = (patientId: string): PatientRecord | undefined =>
+  PATIENT_RECORDS.find((p) => p.id === patientId);
+
+/** Consultations d'un patient */
+export const getConsultationsForPatient = (patientId: string): ConsultationRecord[] =>
+  CONSULTATIONS.filter((c) => c.patientId === patientId);
+
+/** Hospitalisations d'un patient */
+export const getHospitalisationsForPatient = (patientId: string): HospitalisationRecord[] =>
+  HOSPITALISATIONS.filter((h) => h.patientId === patientId);
+
 
 /* ══════════════════════════════════════════════════════════════
    SECTION 14 — DONNÉES INCHANGÉES (conservées de l'original)
@@ -754,9 +897,41 @@ export const ETABLISSEMENTS: Etablissement[] = [
   { id: 'etab_4', nom: 'CHU Saint-Louis',          type: 'Hôpital',   adresse: 'Avenue des Nations, Lomé',               telephone: '+228 22 25 40 00', services: ['Urgences', 'Neurologie', 'Chirurgie', 'Imagerie'],     disponibilite: 'Complet',    coordinates: { lat: 6.1450, lng: 1.2300 } },
 ];
 
-export const JOURNAL_ACHATS_PHARMACIE = [
-  { id: 'journal_1', pharmacie: 'Pharmacie Centrale', date: '2026-03-01T16:45:00', note: 'Achat ordonnance mars 2026', items: ['Aspirine 75mg', 'Bisoprolol 2.5mg', 'Furosémide 40mg', 'Ramipril 5mg'] },
-  { id: 'journal_2', pharmacie: 'Pharmacie du Parc',  date: '2025-12-10T09:12:00', note: 'Renouvellement Amlodipine', items: ['Amlodipine 5mg'] },
+// --- Journal achats pharmacie ---
+export interface JournalAchatPharmacie {
+  id: string;
+  patientId: string;
+  pharmacie: string;
+  date: string;
+  note: string;
+  items: string[];
+}
+
+export const JOURNAL_ACHATS_PHARMACIE: JournalAchatPharmacie[] = [
+  {
+    id: 'achat_001',
+    patientId: 'pat_001',
+    pharmacie: 'Pharmacie Centrale',
+    date: '2026-03-01',
+    note: 'Achat médicaments post-consultation cardiologie',
+    items: ['Aspirine 75mg', 'Atorvastatine 20mg', 'Bisoprolol 2.5mg'],
+  },
+  {
+    id: 'achat_002',
+    patientId: 'pat_001',
+    pharmacie: 'Pharmacie du Parc',
+    date: '2026-02-15',
+    note: 'Renouvellement traitement hypertension',
+    items: ['Amlodipine 5mg', 'Furosémide 40mg'],
+  },
+  {
+    id: 'achat_003',
+    patientId: 'pat_001',
+    pharmacie: 'Pharmacie Saint-Louis',
+    date: '2026-01-20',
+    note: 'Achat médicaments post-hospitalisation',
+    items: ['Ramipril 5mg', 'Aspirine 75mg'],
+  },
 ];
 
 // --- Dashboard cards (inchangé) ---

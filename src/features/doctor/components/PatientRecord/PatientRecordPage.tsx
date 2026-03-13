@@ -18,7 +18,6 @@ import {
   HOSPITALISATIONS,
   ANALYSES,
   ORDONNANCES_RECORD,
-  DEPENSES,
 } from '@shared/data/mock-data';
 
 import type { PatientRecordTabId } from '@shared/types/patient-record.types';
@@ -29,7 +28,6 @@ import PatientRecordHospitalisations from './PatientRecordHospitalisations';
 import PatientRecordAnalyses from './PatientRecordAnalyses';
 import PatientRecordOrdonnances from './PatientRecordOrdonnances';
 import PatientRecordAntecedents from './PatientRecordAntecedents';
-import PatientRecordDepenses from './PatientRecordDepenses';
 import PatientRecordTimeline from './PatientRecordTimeline';
 
 const PatientRecordPage: React.FC = () => {
@@ -64,11 +62,6 @@ const PatientRecordPage: React.FC = () => {
     [patientId]
   );
 
-  const depenses = useMemo(
-    () => DEPENSES.filter((d) => d.patientId === patientId),
-    [patientId]
-  );
-
   const lastConsultation = useMemo(() => {
     return [...consultations].sort((a, b) => (b.date.localeCompare(a.date) || b.heure.localeCompare(a.heure)));
   }, [consultations])[0];
@@ -92,7 +85,6 @@ const PatientRecordPage: React.FC = () => {
       'analyses',
       'ordonnances',
       'antecedents',
-      'depenses',
       'timeline',
     ];
     return segment && validTabs.includes(segment) ? segment : 'consultations';
@@ -138,7 +130,6 @@ const PatientRecordPage: React.FC = () => {
     { id: 'analyses', label: 'Analyses', icon: Beaker },
     { id: 'ordonnances', label: 'Ordonnances', icon: FileText },
     { id: 'antecedents', label: 'Antécédents', icon: ListChecks },
-    { id: 'depenses', label: 'Dépenses', icon: ClipboardList },
     { id: 'timeline', label: 'Chronologie', icon: ListChecks },
   ];
 
@@ -392,8 +383,6 @@ const PatientRecordPage: React.FC = () => {
             {activeTab === 'ordonnances' && <PatientRecordOrdonnances ordonnances={ordonnances} />}
 
             {activeTab === 'antecedents' && <PatientRecordAntecedents antecedents={patient.antecedents} />}
-
-            {activeTab === 'depenses' && <PatientRecordDepenses depenses={depenses} />}
 
             {activeTab === 'timeline' && <PatientRecordTimeline events={patient.timeline} />}
           </div>
