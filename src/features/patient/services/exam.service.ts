@@ -1,5 +1,4 @@
-import type { Exam } from '../types/exam.types';
-import { MOCK_EXAMS, getExamsForPatient } from '@shared/data/mock-data';
+import {Exam, EXAMS as MOCK_EXAMS, getExamsForPatient} from '@shared/data/mock-data';
 
 export const examService = {
   getExams: async (patientId: string): Promise<Exam[]> => {

@@ -1079,4 +1079,54 @@ export const getTimelineEvent = (eventId: string): {
 /** Examens liés à une hospitalisation (via les médecins impliqués ou le motif) */
 export const getExamensForHospitalisation = (hospitalisationId: string): ExamenPatient[] =>
   EXAMENS_PATIENT.filter((e) => e.consultationId === hospitalisationId);
+
+
+
+
+
+export const ORDONNANCES_RECORD: OrdonnanceRecord[] = [
+  {
+    id: 'ord_001',
+    patientId: 'pat_001',
+    consultationId: 'cons_001',
+    medecin: 'Dr. Jean Dupont',
+    medecinId: 'med_001',
+    date: '2026-02-20',
+    statut: 'Active',
+    medicaments: [
+      { nom: 'Aspirine',       dosage: '75mg',  forme: 'Comprimé', posologie: '1 comprimé/j le matin', duree: '30 jours' },
+      { nom: 'Atorvastatine',  dosage: '20mg',  forme: 'Comprimé', posologie: '1 comprimé/j le soir',  duree: '30 jours' },
+      { nom: 'Bisoprolol',     dosage: '2.5mg', forme: 'Comprimé', posologie: '1 comprimé/j le matin', duree: '30 jours' },
+    ],
+    instructions: 'Prendre après les repas. Ne pas interrompre sans avis médical.',
+  },
+  {
+    id: 'ord_002',
+    patientId: 'pat_001',
+    consultationId: 'cons_001',
+    medecin: 'Dr. Jean Dupont',
+    medecinId: 'med_001',
+    date: '2026-03-01',
+    statut: 'Active',
+    medicaments: [
+      { nom: 'Furosémide', dosage: '40mg', forme: 'Comprimé', posologie: '1 comprimé/j le matin', duree: '60 jours' },
+      { nom: 'Ramipril',   dosage: '5mg',  forme: 'Comprimé', posologie: '1 comprimé/j le soir',  duree: '60 jours' },
+    ],
+    instructions: 'Surveiller la tension quotidiennement. Éviter l\'automédication.',
+  },
+  {
+    id: 'ord_003',
+    patientId: 'pat_001',
+    consultationId: 'cons_002',
+    medecin: 'Dr. Sophie Laurent',
+    medecinId: 'med_002',
+    date: '2024-09-12',
+    statut: 'Terminée',
+    medicaments: [
+      { nom: 'Amlodipine', dosage: '5mg', forme: 'Comprimé', posologie: '1 comprimé/j', duree: '90 jours' },
+    ],
+    instructions: 'À prendre à heure fixe.',
+  },
+];
+
  
