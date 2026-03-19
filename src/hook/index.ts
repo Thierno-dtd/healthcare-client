@@ -6,3 +6,4 @@ export * from './useDoctors';
 export * from './useHospitals';
 export * from './useContent';
 export * from './useLogin';
+export * from './useMessages'

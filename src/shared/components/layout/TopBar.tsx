@@ -1,7 +1,6 @@
 // ============================================================
-// TopBar — Barre de navigation supérieure corrigée
+// TopBar — Barre de navigation supérieure — LAMESSE DAMA
 // ============================================================
-
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
@@ -20,13 +19,12 @@ const TopBar: React.FC<TopBarProps> = ({ pageTitle, onMenuToggle }) => {
     const navigate = useNavigate();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // ── Data via hook ───────────────────────────────────────────
     const { data: notifications = [], isLoading } = useNotifications(user?.id ?? '');
     const markAllRead = useMarkAllNotificationsRead();
 
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-    // ── Close dropdown on outside click ────────────────────────
+    // Close on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -38,40 +36,27 @@ const TopBar: React.FC<TopBarProps> = ({ pageTitle, onMenuToggle }) => {
     }, [setShowNotifications]);
 
     const handleMarkAllRead = () => {
-        if (user?.id) {
-            markAllRead.mutate(user.id);
-        }
+        if (user?.id) markAllRead.mutate(user.id);
     };
 
-    // ── Notification icon color by type ────────────────────────
     const getNotifIconClass = (type: string) => {
         const map: Record<string, string> = {
-            alert: 'danger',
-            message: 'info',
-            system: 'success',
-            appointment: 'warning',
+            alert: 'danger', message: 'info', system: 'success', appointment: 'warning',
         };
         return map[type] ?? 'info';
     };
 
     return (
         <div className="top-bar">
-            {/* Menu toggle (mobile) */}
+            {/* Menu toggle */}
             <button
                 className="menu-toggle"
                 onClick={onMenuToggle}
                 aria-label="Ouvrir le menu"
                 style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 40,
-                    height: 40,
-                    color: '#1a3c52',
-                    fontSize: 20,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 40, height: 40, color: '#1a3c52', fontSize: 20,
                 }}
             >
                 <i className="fas fa-bars" />
@@ -93,30 +78,20 @@ const TopBar: React.FC<TopBarProps> = ({ pageTitle, onMenuToggle }) => {
                     <button
                         onClick={toggleNotifications}
                         style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            fontSize: 20,
-                            color: '#495057',
-                            padding: '8px',
-                            borderRadius: 8,
-                            transition: 'background 0.2s',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            position: 'relative', fontSize: 20, color: '#495057',
+                            padding: '8px', borderRadius: 8, transition: 'background 0.2s',
                         }}
-                        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} non lues)` : ''}`}
+                        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ''}`}
                     >
                         <i className="fas fa-bell" />
                         {unreadCount > 0 && (
-                            <span
-                                className="notification-badge"
-                                aria-live="polite"
-                            >
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
+                            <span className="notification-badge" aria-live="polite">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
                         )}
                     </button>
 
-                    {/* Dropdown */}
                     {showNotifications && (
                         <div className="notifications-dropdown" role="dialog" aria-label="Notifications">
                             <div className="dropdown-header">
@@ -162,39 +137,24 @@ const TopBar: React.FC<TopBarProps> = ({ pageTitle, onMenuToggle }) => {
                                                 <h5>{notif.title}</h5>
                                                 <p>{notif.body}</p>
                                                 <span className="notif-time">
-                          {formatRelativeTime(notif.createdAt)}
-                        </span>
+                                                    {formatRelativeTime(notif.createdAt)}
+                                                </span>
                                             </div>
                                             {!notif.isRead && (
-                                                <div
-                                                    style={{
-                                                        width: 8,
-                                                        height: 8,
-                                                        borderRadius: '50%',
-                                                        background: '#2a6b8f',
-                                                        flexShrink: 0,
-                                                        alignSelf: 'center',
-                                                    }}
-                                                />
+                                                <div style={{
+                                                    width: 8, height: 8, borderRadius: '50%',
+                                                    background: '#2a6b8f', flexShrink: 0, alignSelf: 'center',
+                                                }} />
                                             )}
                                         </div>
                                     ))
                                 )}
 
                                 {notifications.length > 8 && (
-                                    <div
-                                        style={{
-                                            padding: '12px 20px',
-                                            textAlign: 'center',
-                                            borderTop: '1px solid #f3f4f6',
-                                        }}
-                                    >
+                                    <div style={{ padding: '12px 20px', textAlign: 'center', borderTop: '1px solid #f3f4f6' }}>
                                         <button
                                             className="btn-text"
-                                            onClick={() => {
-                                                setShowNotifications(false);
-                                                navigate('/notifications');
-                                            }}
+                                            onClick={() => { setShowNotifications(false); navigate('/notifications'); }}
                                         >
                                             Voir toutes les notifications ({notifications.length})
                                         </button>
@@ -205,7 +165,7 @@ const TopBar: React.FC<TopBarProps> = ({ pageTitle, onMenuToggle }) => {
                     )}
                 </div>
 
-                {/* Logout button */}
+                {/* Logout */}
                 <button
                     className="btn btn-outline"
                     onClick={() => logout()}

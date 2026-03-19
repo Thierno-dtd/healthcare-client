@@ -10,6 +10,7 @@ import '../styles/extended.css';
 import '../styles/examens.css';
 import '../styles/responsive.css';
 import '../styles/medical-components.css';
+import '../styles/branding.css';
 
 import App from './App';
 
