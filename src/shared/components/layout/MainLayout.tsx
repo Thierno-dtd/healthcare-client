@@ -1,13 +1,9 @@
-// ============================================================
-// MainLayout - Layout principal avec Sidebar et TopBar
-// ============================================================
-
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-import { useUIStore } from '@core/stores/ui.store';
-import { PAGE_TITLES } from '@shared/utils/constants';
+import {useUIStore} from "@/store/ui.store.ts";
+
 
 const MainLayout: React.FC = () => {
   const location = useLocation();

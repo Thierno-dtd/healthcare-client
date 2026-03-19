@@ -9,6 +9,14 @@ export interface Doctor {
     specialization: string;
     hospitalId: string;
     patientCount: number;
+    alertCount: number;
     status: DoctorStatus;
     joinedAt: string;
+}
+
+export interface DoctorFilters {
+    search?: string;
+    status?: DoctorStatus | 'all';
+    hospitalId?: string;
+    specialization?: string;
 }

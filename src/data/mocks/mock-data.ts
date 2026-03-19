@@ -1,11 +1,22 @@
+// ============================================================
+// MOCK DATA — Single source of truth for all fake data
+// ============================================================
 
 import type {
-    User, Patient, Doctor, Hospital, Alert, Notification,
-    HealthMetric, HealthContent, Message,
+    Alert
 } from '../models';
+import {User} from "@/data/models/user.model.ts";
+import {Hospital} from "@/data/models/hospital.model.ts";
+import {Doctor} from "@/data/models/doctor.model.ts";
+import {HealthMetric, Patient} from "@/data/models/patient.model.ts";
+import {Message, Notification} from "@/data/models/notification.model.ts";
+import {HealthContent} from "@/data/models/healthContent.model.ts";
+
+// ─── Delay helper ────────────────────────────────────────────
+export const delay = (ms = 350): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
 // ─── Users ──────────────────────────────────────────────────
-
 export const MOCK_USERS: User[] = [
     {
         id: 'u_001',
@@ -28,15 +39,39 @@ export const MOCK_USERS: User[] = [
     {
         id: 'u_003',
         email: 'admin@healthplatform.com',
-        name: 'Admin System',
+        name: 'Admin Système',
         role: 'admin',
         avatar: 'AS',
         createdAt: '2023-01-01',
     },
+    {
+        id: 'u_004',
+        email: 'dr.moreau@clinic.com',
+        name: 'Dr. Claire Moreau',
+        role: 'doctor',
+        avatar: 'CM',
+        hospitalId: 'h_001',
+        createdAt: '2023-06-20',
+    },
+    {
+        id: 'u_005',
+        email: 'dr.leclerc@clinic.com',
+        name: 'Dr. Paul Leclerc',
+        role: 'doctor',
+        avatar: 'PL',
+        hospitalId: 'h_002',
+        createdAt: '2023-03-15',
+    },
 ];
 
-// ─── Hospitals ──────────────────────────────────────────────
+// ─── Demo credentials map ───────────────────────────────────
+export const DEMO_CREDENTIALS: Record<string, string> = {
+    'dr.martin@clinic.com': 'password123',
+    'manager@hopital-central.com': 'password123',
+    'admin@healthplatform.com': 'password123',
+};
 
+// ─── Hospitals ──────────────────────────────────────────────
 export const MOCK_HOSPITALS: Hospital[] = [
     {
         id: 'h_001',
@@ -64,7 +99,7 @@ export const MOCK_HOSPITALS: Hospital[] = [
         managerId: 'u_003',
         doctorCount: 12,
         patientCount: 178,
-        coordinates: { lat: 45.7640, lng: 4.8357 },
+        coordinates: { lat: 45.764, lng: 4.8357 },
         status: 'active',
         createdAt: '2022-08-20',
     },
@@ -101,7 +136,6 @@ export const MOCK_HOSPITALS: Hospital[] = [
 ];
 
 // ─── Doctors ────────────────────────────────────────────────
-
 export const MOCK_DOCTORS: Doctor[] = [
     {
         id: 'd_001',
@@ -112,6 +146,7 @@ export const MOCK_DOCTORS: Doctor[] = [
         specialization: 'Cardiologie',
         hospitalId: 'h_001',
         patientCount: 45,
+        alertCount: 3,
         status: 'active',
         joinedAt: '2024-01-10',
     },
@@ -124,6 +159,7 @@ export const MOCK_DOCTORS: Doctor[] = [
         specialization: 'Médecine générale',
         hospitalId: 'h_001',
         patientCount: 38,
+        alertCount: 1,
         status: 'active',
         joinedAt: '2023-06-20',
     },
@@ -136,6 +172,7 @@ export const MOCK_DOCTORS: Doctor[] = [
         specialization: 'Endocrinologie',
         hospitalId: 'h_002',
         patientCount: 52,
+        alertCount: 2,
         status: 'active',
         joinedAt: '2023-03-15',
     },
@@ -148,13 +185,26 @@ export const MOCK_DOCTORS: Doctor[] = [
         specialization: 'Cardiologie',
         hospitalId: 'h_002',
         patientCount: 27,
+        alertCount: 0,
         status: 'pending',
         joinedAt: '2024-03-01',
+    },
+    {
+        id: 'd_005',
+        userId: 'u_007',
+        name: 'Dr. François Blanc',
+        email: 'dr.blanc@clinic.com',
+        phone: '+33 6 44 55 66 77',
+        specialization: 'Neurologie',
+        hospitalId: 'h_001',
+        patientCount: 31,
+        alertCount: 0,
+        status: 'active',
+        joinedAt: '2022-10-01',
     },
 ];
 
 // ─── Patients ───────────────────────────────────────────────
-
 export const MOCK_PATIENTS: Patient[] = [
     {
         id: 'p_001',
@@ -240,12 +290,38 @@ export const MOCK_PATIENTS: Patient[] = [
         lastActivity: '2026-02-01T16:45:00Z',
         createdAt: '2024-03-01',
     },
+    {
+        id: 'p_007',
+        name: 'Nicolas Leroy',
+        email: 'nicolas.leroy@email.com',
+        phone: '+33 6 77 77 77 77',
+        dateOfBirth: '1988-03-20',
+        gender: 'male',
+        hospitalId: 'h_001',
+        doctorId: 'd_001',
+        status: 'active',
+        conditions: ['hypertension'],
+        lastActivity: '2026-03-18T09:00:00Z',
+        createdAt: '2025-01-12',
+    },
+    {
+        id: 'p_008',
+        name: 'Camille Girard',
+        email: 'camille.girard@email.com',
+        phone: '+33 6 88 88 88 88',
+        dateOfBirth: '2001-11-30',
+        gender: 'female',
+        hospitalId: 'h_002',
+        doctorId: 'd_003',
+        status: 'pending',
+        conditions: ['diabète type 1'],
+        lastActivity: '2026-03-17T12:00:00Z',
+        createdAt: '2026-03-17',
+    },
 ];
 
 // ─── Health Metrics ─────────────────────────────────────────
-
 export const MOCK_METRICS: HealthMetric[] = [
-    // Patient p_001 — blood pressure (critical)
     { id: 'm_001', patientId: 'p_001', type: 'blood_pressure', value: 185, unit: 'mmHg', recordedAt: '2026-03-17T08:30:00Z' },
     { id: 'm_002', patientId: 'p_001', type: 'blood_pressure', value: 172, unit: 'mmHg', recordedAt: '2026-03-16T08:15:00Z' },
     { id: 'm_003', patientId: 'p_001', type: 'blood_pressure', value: 165, unit: 'mmHg', recordedAt: '2026-03-15T09:00:00Z' },
@@ -253,20 +329,18 @@ export const MOCK_METRICS: HealthMetric[] = [
     { id: 'm_005', patientId: 'p_001', type: 'blood_pressure', value: 138, unit: 'mmHg', recordedAt: '2026-03-13T08:20:00Z' },
     { id: 'm_006', patientId: 'p_001', type: 'glucose', value: 8.4, unit: 'mmol/L', recordedAt: '2026-03-17T07:00:00Z' },
     { id: 'm_007', patientId: 'p_001', type: 'glucose', value: 7.9, unit: 'mmol/L', recordedAt: '2026-03-16T07:00:00Z' },
-    // Patient p_002 — heart rate
     { id: 'm_008', patientId: 'p_002', type: 'heart_rate', value: 112, unit: 'bpm', recordedAt: '2026-03-16T14:00:00Z' },
     { id: 'm_009', patientId: 'p_002', type: 'heart_rate', value: 98, unit: 'bpm', recordedAt: '2026-03-15T14:00:00Z' },
     { id: 'm_010', patientId: 'p_002', type: 'heart_rate', value: 88, unit: 'bpm', recordedAt: '2026-03-14T14:00:00Z' },
-    // Patient p_003
     { id: 'm_011', patientId: 'p_003', type: 'heart_rate', value: 95, unit: 'bpm', recordedAt: '2026-03-15T11:20:00Z' },
     { id: 'm_012', patientId: 'p_003', type: 'weight', value: 94, unit: 'kg', recordedAt: '2026-03-15T10:00:00Z' },
-    // Patient p_005
     { id: 'm_013', patientId: 'p_005', type: 'blood_pressure', value: 195, unit: 'mmHg', recordedAt: '2026-03-17T07:15:00Z' },
     { id: 'm_014', patientId: 'p_005', type: 'blood_pressure', value: 178, unit: 'mmHg', recordedAt: '2026-03-16T07:00:00Z' },
+    { id: 'm_015', patientId: 'p_007', type: 'blood_pressure', value: 142, unit: 'mmHg', recordedAt: '2026-03-18T09:00:00Z' },
+    { id: 'm_016', patientId: 'p_007', type: 'heart_rate', value: 78, unit: 'bpm', recordedAt: '2026-03-18T09:00:00Z' },
 ];
 
 // ─── Alerts ─────────────────────────────────────────────────
-
 export const MOCK_ALERTS: Alert[] = [
     {
         id: 'a_001',
@@ -280,6 +354,7 @@ export const MOCK_ALERTS: Alert[] = [
         threshold: 160,
         message: 'Tension artérielle critique : 185 mmHg (seuil : 160)',
         isRead: false,
+        isResolved: false,
         createdAt: '2026-03-17T08:30:00Z',
     },
     {
@@ -294,6 +369,7 @@ export const MOCK_ALERTS: Alert[] = [
         threshold: 160,
         message: 'Tension artérielle très élevée : 195 mmHg',
         isRead: false,
+        isResolved: false,
         createdAt: '2026-03-17T07:15:00Z',
     },
     {
@@ -308,6 +384,7 @@ export const MOCK_ALERTS: Alert[] = [
         threshold: 100,
         message: 'Fréquence cardiaque élevée : 112 bpm',
         isRead: false,
+        isResolved: false,
         createdAt: '2026-03-16T14:00:00Z',
     },
     {
@@ -322,6 +399,7 @@ export const MOCK_ALERTS: Alert[] = [
         threshold: 7.0,
         message: 'Glycémie élevée : 8.4 mmol/L (seuil : 7.0)',
         isRead: true,
+        isResolved: false,
         createdAt: '2026-03-17T07:00:00Z',
     },
     {
@@ -336,12 +414,14 @@ export const MOCK_ALERTS: Alert[] = [
         threshold: 100,
         message: 'Fréquence cardiaque à surveiller',
         isRead: true,
+        isResolved: true,
+        resolvedAt: '2026-03-16T09:00:00Z',
+        resolvedBy: 'u_004',
         createdAt: '2026-03-15T11:20:00Z',
     },
 ];
 
 // ─── Notifications ──────────────────────────────────────────
-
 export const MOCK_NOTIFICATIONS: Notification[] = [
     {
         id: 'n_001',
@@ -358,7 +438,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
         userId: 'u_001',
         type: 'message',
         title: 'Nouveau message de Sophie Lambert',
-        body: 'Bonjour docteur, j\'ai des douleurs depuis hier soir...',
+        body: "Bonjour docteur, j'ai des douleurs depuis hier soir...",
         isRead: false,
         createdAt: '2026-03-16T10:00:00Z',
     },
@@ -380,10 +460,18 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
         isRead: false,
         createdAt: '2026-03-14T11:30:00Z',
     },
+    {
+        id: 'n_005',
+        userId: 'u_003',
+        type: 'system',
+        title: 'Nouvel hôpital inscrit',
+        body: 'Centre Médical Bordeaux a été ajouté à la plateforme.',
+        isRead: false,
+        createdAt: '2026-03-13T15:00:00Z',
+    },
 ];
 
 // ─── Messages ───────────────────────────────────────────────
-
 export const MOCK_MESSAGES: Message[] = [
     {
         id: 'msg_001',
@@ -391,7 +479,7 @@ export const MOCK_MESSAGES: Message[] = [
         fromName: 'Sophie Lambert',
         toId: 'u_001',
         subject: 'Douleurs persistantes',
-        body: 'Bonjour docteur, j\'ai des douleurs thoraciques depuis hier soir. Dois-je venir aux urgences ?',
+        body: "Bonjour docteur, j'ai des douleurs thoraciques depuis hier soir. Dois-je venir aux urgences ?",
         isRead: false,
         sentAt: '2026-03-16T10:00:00Z',
     },
@@ -400,46 +488,57 @@ export const MOCK_MESSAGES: Message[] = [
         fromId: 'p_001',
         fromName: 'Jean Dubois',
         toId: 'u_001',
-        subject: 'Résultats d\'analyse',
-        body: 'Bonjour, j\'ai reçu mes résultats. Est-ce que vous pouvez les consulter?',
+        subject: "Résultats d'analyse",
+        body: "Bonjour, j'ai reçu mes résultats. Est-ce que vous pouvez les consulter?",
         isRead: true,
         sentAt: '2026-03-14T15:30:00Z',
     },
 ];
 
 // ─── Health Content ─────────────────────────────────────────
-
 export const MOCK_CONTENT: HealthContent[] = [
     {
         id: 'c_001',
         type: 'advice',
         title: '5 conseils pour réduire la tension artérielle naturellement',
-        body: 'Réduire le sel, pratiquer une activité physique régulière, limiter l\'alcool...',
+        body: "Réduire le sel, pratiquer une activité physique régulière, limiter l'alcool...",
         authorId: 'u_003',
+        authorName: 'Admin Système',
         publishedAt: '2026-03-15T10:00:00Z',
         tags: ['hypertension', 'prévention', 'alimentation'],
+        isPublished: true,
     },
     {
         id: 'c_002',
         type: 'event',
         title: 'Journée de dépistage diabète — Paris',
-        body: 'Dépistage gratuit du diabète de type 2 à l\'Hôpital Central...',
+        body: "Dépistage gratuit du diabète de type 2 à l'Hôpital Central...",
         authorId: 'u_003',
+        authorName: 'Admin Système',
         publishedAt: '2026-03-10T08:00:00Z',
         tags: ['diabète', 'événement', 'dépistage'],
+        isPublished: true,
     },
     {
         id: 'c_003',
         type: 'news',
-        title: 'Nouveau traitement approuvé contre l\'insuffisance cardiaque',
+        title: "Nouveau traitement approuvé contre l'insuffisance cardiaque",
         body: 'La FDA a approuvé un traitement révolutionnaire...',
         authorId: 'u_003',
+        authorName: 'Admin Système',
         publishedAt: '2026-03-12T14:30:00Z',
         tags: ['cardiologie', 'traitement', 'actualités'],
+        isPublished: true,
+    },
+    {
+        id: 'c_004',
+        type: 'advice',
+        title: 'Gérer son stress au quotidien : techniques éprouvées',
+        body: 'La méditation, la respiration profonde et le sport sont vos meilleurs alliés...',
+        authorId: 'u_003',
+        authorName: 'Admin Système',
+        publishedAt: '2026-03-08T09:00:00Z',
+        tags: ['stress', 'bien-être', 'mental'],
+        isPublished: false,
     },
 ];
-
-// ─── Utility: simulate async API latency ────────────────────
-
-export const delay = (ms = 400): Promise<void> =>
-    new Promise((resolve) => setTimeout(resolve, ms));

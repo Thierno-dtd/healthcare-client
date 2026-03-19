@@ -1,3 +1,5 @@
+export type HospitalStatus = 'active' | 'inactive';
+
 export interface Hospital {
     id: string;
     name: string;
@@ -10,6 +12,12 @@ export interface Hospital {
     doctorCount: number;
     patientCount: number;
     coordinates: { lat: number; lng: number };
-    status: 'active' | 'inactive';
+    status: HospitalStatus;
     createdAt: string;
+}
+
+export interface HospitalFilters {
+    search?: string;
+    status?: HospitalStatus | 'all';
+    city?: string;
 }

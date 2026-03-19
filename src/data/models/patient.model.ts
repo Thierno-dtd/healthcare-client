@@ -1,5 +1,13 @@
 export type PatientStatus = 'active' | 'pending' | 'suspended';
-export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type Gender = 'male' | 'female' | 'other';
+export type MetricType =
+    | 'blood_pressure'
+    | 'heart_rate'
+    | 'glucose'
+    | 'weight'
+    | 'steps'
+    | 'sleep'
+    | 'oxygen_saturation';
 
 export interface Patient {
     id: string;
@@ -7,11 +15,11 @@ export interface Patient {
     email: string;
     phone: string;
     dateOfBirth: string;
-    gender: 'male' | 'female' | 'other';
+    gender: Gender;
     hospitalId: string;
     doctorId: string;
     status: PatientStatus;
-    conditions: string[]; // e.g. ["diabetes", "hypertension"]
+    conditions: string[];
     lastActivity: string;
     createdAt: string;
 }
@@ -19,7 +27,7 @@ export interface Patient {
 export interface HealthMetric {
     id: string;
     patientId: string;
-    type: 'blood_pressure' | 'heart_rate' | 'glucose' | 'weight' | 'steps' | 'sleep';
+    type: MetricType;
     value: number;
     unit: string;
     recordedAt: string;
@@ -27,7 +35,26 @@ export interface HealthMetric {
 }
 
 export interface MetricThreshold {
-    type: HealthMetric['type'];
+    type: MetricType;
     min?: number;
     max?: number;
+    unit: string;
+    label: string;
+}
+
+export interface PatientFilters {
+    search?: string;
+    status?: PatientStatus | 'all';
+    doctorId?: string;
+    hospitalId?: string;
+    page?: number;
+    pageSize?: number;
+}
+
+export interface PatientStats {
+    total: number;
+    active: number;
+    pending: number;
+    suspended: number;
+    newThisMonth: number;
 }

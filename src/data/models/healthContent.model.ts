@@ -7,6 +7,14 @@ export interface HealthContent {
     body: string;
     imageUrl?: string;
     authorId: string;
+    authorName: string;
     publishedAt: string;
     tags: string[];
+    isPublished: boolean;
+}
+
+export interface ContentFilters {
+    type?: ContentType | 'all';
+    search?: string;
+    tags?: string[];
 }
