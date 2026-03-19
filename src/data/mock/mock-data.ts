@@ -1,0 +1,445 @@
+
+import type {
+    User, Patient, Doctor, Hospital, Alert, Notification,
+    HealthMetric, HealthContent, Message,
+} from '../models';
+
+// ─── Users ──────────────────────────────────────────────────
+
+export const MOCK_USERS: User[] = [
+    {
+        id: 'u_001',
+        email: 'dr.martin@clinic.com',
+        name: 'Dr. Martin Dupont',
+        role: 'doctor',
+        avatar: 'MD',
+        hospitalId: 'h_001',
+        createdAt: '2024-01-10',
+    },
+    {
+        id: 'u_002',
+        email: 'manager@hopital-central.com',
+        name: 'Sophie Bernard',
+        role: 'hospital_manager',
+        avatar: 'SB',
+        hospitalId: 'h_001',
+        createdAt: '2023-09-15',
+    },
+    {
+        id: 'u_003',
+        email: 'admin@healthplatform.com',
+        name: 'Admin System',
+        role: 'admin',
+        avatar: 'AS',
+        createdAt: '2023-01-01',
+    },
+];
+
+// ─── Hospitals ──────────────────────────────────────────────
+
+export const MOCK_HOSPITALS: Hospital[] = [
+    {
+        id: 'h_001',
+        name: 'Hôpital Central de Paris',
+        address: '12 Rue de la Santé',
+        city: 'Paris',
+        country: 'France',
+        phone: '+33 1 42 34 56 78',
+        email: 'contact@hopital-central.fr',
+        managerId: 'u_002',
+        doctorCount: 24,
+        patientCount: 312,
+        coordinates: { lat: 48.8566, lng: 2.3522 },
+        status: 'active',
+        createdAt: '2022-03-15',
+    },
+    {
+        id: 'h_002',
+        name: 'Clinique Saint-Louis',
+        address: '45 Avenue des Fleurs',
+        city: 'Lyon',
+        country: 'France',
+        phone: '+33 4 72 11 23 45',
+        email: 'contact@clinique-stlouis.fr',
+        managerId: 'u_003',
+        doctorCount: 12,
+        patientCount: 178,
+        coordinates: { lat: 45.7640, lng: 4.8357 },
+        status: 'active',
+        createdAt: '2022-08-20',
+    },
+    {
+        id: 'h_003',
+        name: 'Centre Médical Bordeaux',
+        address: '8 Cours Victor Hugo',
+        city: 'Bordeaux',
+        country: 'France',
+        phone: '+33 5 56 90 12 34',
+        email: 'contact@cm-bordeaux.fr',
+        managerId: 'u_003',
+        doctorCount: 8,
+        patientCount: 95,
+        coordinates: { lat: 44.8378, lng: -0.5792 },
+        status: 'inactive',
+        createdAt: '2023-01-10',
+    },
+    {
+        id: 'h_004',
+        name: 'Polyclinique Marseille',
+        address: '17 Boulevard Longchamp',
+        city: 'Marseille',
+        country: 'France',
+        phone: '+33 4 91 33 44 55',
+        email: 'contact@poly-marseille.fr',
+        managerId: 'u_003',
+        doctorCount: 15,
+        patientCount: 210,
+        coordinates: { lat: 43.2965, lng: 5.3698 },
+        status: 'active',
+        createdAt: '2022-11-05',
+    },
+];
+
+// ─── Doctors ────────────────────────────────────────────────
+
+export const MOCK_DOCTORS: Doctor[] = [
+    {
+        id: 'd_001',
+        userId: 'u_001',
+        name: 'Dr. Martin Dupont',
+        email: 'dr.martin@clinic.com',
+        phone: '+33 6 11 22 33 44',
+        specialization: 'Cardiologie',
+        hospitalId: 'h_001',
+        patientCount: 45,
+        status: 'active',
+        joinedAt: '2024-01-10',
+    },
+    {
+        id: 'd_002',
+        userId: 'u_004',
+        name: 'Dr. Claire Moreau',
+        email: 'dr.moreau@clinic.com',
+        phone: '+33 6 55 66 77 88',
+        specialization: 'Médecine générale',
+        hospitalId: 'h_001',
+        patientCount: 38,
+        status: 'active',
+        joinedAt: '2023-06-20',
+    },
+    {
+        id: 'd_003',
+        userId: 'u_005',
+        name: 'Dr. Paul Leclerc',
+        email: 'dr.leclerc@clinic.com',
+        phone: '+33 6 22 33 44 55',
+        specialization: 'Endocrinologie',
+        hospitalId: 'h_002',
+        patientCount: 52,
+        status: 'active',
+        joinedAt: '2023-03-15',
+    },
+    {
+        id: 'd_004',
+        userId: 'u_006',
+        name: 'Dr. Amélie Petit',
+        email: 'dr.petit@clinic.com',
+        phone: '+33 6 88 99 00 11',
+        specialization: 'Cardiologie',
+        hospitalId: 'h_002',
+        patientCount: 27,
+        status: 'pending',
+        joinedAt: '2024-03-01',
+    },
+];
+
+// ─── Patients ───────────────────────────────────────────────
+
+export const MOCK_PATIENTS: Patient[] = [
+    {
+        id: 'p_001',
+        name: 'Jean Dubois',
+        email: 'jean.dubois@email.com',
+        phone: '+33 6 11 11 11 11',
+        dateOfBirth: '1968-04-12',
+        gender: 'male',
+        hospitalId: 'h_001',
+        doctorId: 'd_001',
+        status: 'active',
+        conditions: ['hypertension', 'diabète type 2'],
+        lastActivity: '2026-03-17T08:30:00Z',
+        createdAt: '2024-02-15',
+    },
+    {
+        id: 'p_002',
+        name: 'Marie Fontaine',
+        email: 'marie.fontaine@email.com',
+        phone: '+33 6 22 22 22 22',
+        dateOfBirth: '1975-09-28',
+        gender: 'female',
+        hospitalId: 'h_001',
+        doctorId: 'd_001',
+        status: 'active',
+        conditions: ['asthme'],
+        lastActivity: '2026-03-16T14:00:00Z',
+        createdAt: '2024-01-20',
+    },
+    {
+        id: 'p_003',
+        name: 'Pierre Martin',
+        email: 'pierre.martin@email.com',
+        phone: '+33 6 33 33 33 33',
+        dateOfBirth: '1952-11-05',
+        gender: 'male',
+        hospitalId: 'h_001',
+        doctorId: 'd_002',
+        status: 'active',
+        conditions: ['insuffisance cardiaque', 'diabète type 2'],
+        lastActivity: '2026-03-15T11:20:00Z',
+        createdAt: '2023-11-10',
+    },
+    {
+        id: 'p_004',
+        name: 'Sophie Lambert',
+        email: 'sophie.lambert@email.com',
+        phone: '+33 6 44 44 44 44',
+        dateOfBirth: '1990-06-18',
+        gender: 'female',
+        hospitalId: 'h_001',
+        doctorId: 'd_001',
+        status: 'pending',
+        conditions: ['obésité'],
+        lastActivity: '2026-03-10T09:00:00Z',
+        createdAt: '2026-03-10',
+    },
+    {
+        id: 'p_005',
+        name: 'Alain Rousseau',
+        email: 'alain.rousseau@email.com',
+        phone: '+33 6 55 55 55 55',
+        dateOfBirth: '1945-02-28',
+        gender: 'male',
+        hospitalId: 'h_002',
+        doctorId: 'd_003',
+        status: 'active',
+        conditions: ['hypertension', 'insuffisance rénale'],
+        lastActivity: '2026-03-17T07:15:00Z',
+        createdAt: '2023-08-05',
+    },
+    {
+        id: 'p_006',
+        name: 'Isabelle Durand',
+        email: 'isabelle.durand@email.com',
+        phone: '+33 6 66 66 66 66',
+        dateOfBirth: '1983-07-14',
+        gender: 'female',
+        hospitalId: 'h_001',
+        doctorId: 'd_002',
+        status: 'suspended',
+        conditions: ['dépression'],
+        lastActivity: '2026-02-01T16:45:00Z',
+        createdAt: '2024-03-01',
+    },
+];
+
+// ─── Health Metrics ─────────────────────────────────────────
+
+export const MOCK_METRICS: HealthMetric[] = [
+    // Patient p_001 — blood pressure (critical)
+    { id: 'm_001', patientId: 'p_001', type: 'blood_pressure', value: 185, unit: 'mmHg', recordedAt: '2026-03-17T08:30:00Z' },
+    { id: 'm_002', patientId: 'p_001', type: 'blood_pressure', value: 172, unit: 'mmHg', recordedAt: '2026-03-16T08:15:00Z' },
+    { id: 'm_003', patientId: 'p_001', type: 'blood_pressure', value: 165, unit: 'mmHg', recordedAt: '2026-03-15T09:00:00Z' },
+    { id: 'm_004', patientId: 'p_001', type: 'blood_pressure', value: 145, unit: 'mmHg', recordedAt: '2026-03-14T08:45:00Z' },
+    { id: 'm_005', patientId: 'p_001', type: 'blood_pressure', value: 138, unit: 'mmHg', recordedAt: '2026-03-13T08:20:00Z' },
+    { id: 'm_006', patientId: 'p_001', type: 'glucose', value: 8.4, unit: 'mmol/L', recordedAt: '2026-03-17T07:00:00Z' },
+    { id: 'm_007', patientId: 'p_001', type: 'glucose', value: 7.9, unit: 'mmol/L', recordedAt: '2026-03-16T07:00:00Z' },
+    // Patient p_002 — heart rate
+    { id: 'm_008', patientId: 'p_002', type: 'heart_rate', value: 112, unit: 'bpm', recordedAt: '2026-03-16T14:00:00Z' },
+    { id: 'm_009', patientId: 'p_002', type: 'heart_rate', value: 98, unit: 'bpm', recordedAt: '2026-03-15T14:00:00Z' },
+    { id: 'm_010', patientId: 'p_002', type: 'heart_rate', value: 88, unit: 'bpm', recordedAt: '2026-03-14T14:00:00Z' },
+    // Patient p_003
+    { id: 'm_011', patientId: 'p_003', type: 'heart_rate', value: 95, unit: 'bpm', recordedAt: '2026-03-15T11:20:00Z' },
+    { id: 'm_012', patientId: 'p_003', type: 'weight', value: 94, unit: 'kg', recordedAt: '2026-03-15T10:00:00Z' },
+    // Patient p_005
+    { id: 'm_013', patientId: 'p_005', type: 'blood_pressure', value: 195, unit: 'mmHg', recordedAt: '2026-03-17T07:15:00Z' },
+    { id: 'm_014', patientId: 'p_005', type: 'blood_pressure', value: 178, unit: 'mmHg', recordedAt: '2026-03-16T07:00:00Z' },
+];
+
+// ─── Alerts ─────────────────────────────────────────────────
+
+export const MOCK_ALERTS: Alert[] = [
+    {
+        id: 'a_001',
+        patientId: 'p_001',
+        patientName: 'Jean Dubois',
+        doctorId: 'd_001',
+        type: 'blood_pressure',
+        severity: 'critical',
+        value: 185,
+        unit: 'mmHg',
+        threshold: 160,
+        message: 'Tension artérielle critique : 185 mmHg (seuil : 160)',
+        isRead: false,
+        createdAt: '2026-03-17T08:30:00Z',
+    },
+    {
+        id: 'a_002',
+        patientId: 'p_005',
+        patientName: 'Alain Rousseau',
+        doctorId: 'd_003',
+        type: 'blood_pressure',
+        severity: 'critical',
+        value: 195,
+        unit: 'mmHg',
+        threshold: 160,
+        message: 'Tension artérielle très élevée : 195 mmHg',
+        isRead: false,
+        createdAt: '2026-03-17T07:15:00Z',
+    },
+    {
+        id: 'a_003',
+        patientId: 'p_002',
+        patientName: 'Marie Fontaine',
+        doctorId: 'd_001',
+        type: 'heart_rate',
+        severity: 'high',
+        value: 112,
+        unit: 'bpm',
+        threshold: 100,
+        message: 'Fréquence cardiaque élevée : 112 bpm',
+        isRead: false,
+        createdAt: '2026-03-16T14:00:00Z',
+    },
+    {
+        id: 'a_004',
+        patientId: 'p_001',
+        patientName: 'Jean Dubois',
+        doctorId: 'd_001',
+        type: 'glucose',
+        severity: 'medium',
+        value: 8.4,
+        unit: 'mmol/L',
+        threshold: 7.0,
+        message: 'Glycémie élevée : 8.4 mmol/L (seuil : 7.0)',
+        isRead: true,
+        createdAt: '2026-03-17T07:00:00Z',
+    },
+    {
+        id: 'a_005',
+        patientId: 'p_003',
+        patientName: 'Pierre Martin',
+        doctorId: 'd_002',
+        type: 'heart_rate',
+        severity: 'low',
+        value: 95,
+        unit: 'bpm',
+        threshold: 100,
+        message: 'Fréquence cardiaque à surveiller',
+        isRead: true,
+        createdAt: '2026-03-15T11:20:00Z',
+    },
+];
+
+// ─── Notifications ──────────────────────────────────────────
+
+export const MOCK_NOTIFICATIONS: Notification[] = [
+    {
+        id: 'n_001',
+        userId: 'u_001',
+        type: 'alert',
+        title: 'Alerte critique — Jean Dubois',
+        body: 'Tension artérielle : 185 mmHg. Intervention requise.',
+        isRead: false,
+        metadata: { patientId: 'p_001', alertId: 'a_001' },
+        createdAt: '2026-03-17T08:30:00Z',
+    },
+    {
+        id: 'n_002',
+        userId: 'u_001',
+        type: 'message',
+        title: 'Nouveau message de Sophie Lambert',
+        body: 'Bonjour docteur, j\'ai des douleurs depuis hier soir...',
+        isRead: false,
+        createdAt: '2026-03-16T10:00:00Z',
+    },
+    {
+        id: 'n_003',
+        userId: 'u_001',
+        type: 'system',
+        title: 'Compte patient validé',
+        body: 'Le compte de Sophie Lambert a été activé avec succès.',
+        isRead: true,
+        createdAt: '2026-03-15T09:00:00Z',
+    },
+    {
+        id: 'n_004',
+        userId: 'u_002',
+        type: 'system',
+        title: 'Nouveau médecin enregistré',
+        body: 'Dr. Amélie Petit a rejoint votre établissement.',
+        isRead: false,
+        createdAt: '2026-03-14T11:30:00Z',
+    },
+];
+
+// ─── Messages ───────────────────────────────────────────────
+
+export const MOCK_MESSAGES: Message[] = [
+    {
+        id: 'msg_001',
+        fromId: 'p_004',
+        fromName: 'Sophie Lambert',
+        toId: 'u_001',
+        subject: 'Douleurs persistantes',
+        body: 'Bonjour docteur, j\'ai des douleurs thoraciques depuis hier soir. Dois-je venir aux urgences ?',
+        isRead: false,
+        sentAt: '2026-03-16T10:00:00Z',
+    },
+    {
+        id: 'msg_002',
+        fromId: 'p_001',
+        fromName: 'Jean Dubois',
+        toId: 'u_001',
+        subject: 'Résultats d\'analyse',
+        body: 'Bonjour, j\'ai reçu mes résultats. Est-ce que vous pouvez les consulter?',
+        isRead: true,
+        sentAt: '2026-03-14T15:30:00Z',
+    },
+];
+
+// ─── Health Content ─────────────────────────────────────────
+
+export const MOCK_CONTENT: HealthContent[] = [
+    {
+        id: 'c_001',
+        type: 'advice',
+        title: '5 conseils pour réduire la tension artérielle naturellement',
+        body: 'Réduire le sel, pratiquer une activité physique régulière, limiter l\'alcool...',
+        authorId: 'u_003',
+        publishedAt: '2026-03-15T10:00:00Z',
+        tags: ['hypertension', 'prévention', 'alimentation'],
+    },
+    {
+        id: 'c_002',
+        type: 'event',
+        title: 'Journée de dépistage diabète — Paris',
+        body: 'Dépistage gratuit du diabète de type 2 à l\'Hôpital Central...',
+        authorId: 'u_003',
+        publishedAt: '2026-03-10T08:00:00Z',
+        tags: ['diabète', 'événement', 'dépistage'],
+    },
+    {
+        id: 'c_003',
+        type: 'news',
+        title: 'Nouveau traitement approuvé contre l\'insuffisance cardiaque',
+        body: 'La FDA a approuvé un traitement révolutionnaire...',
+        authorId: 'u_003',
+        publishedAt: '2026-03-12T14:30:00Z',
+        tags: ['cardiologie', 'traitement', 'actualités'],
+    },
+];
+
+// ─── Utility: simulate async API latency ────────────────────
+
+export const delay = (ms = 400): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, ms));
