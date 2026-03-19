@@ -1,8 +1,8 @@
 import type {
     PaginatedResult,
 } from '../data/models';
-import { MOCK_PATIENTS, MOCK_METRICS, delay } from '@/data/mocks/mock-data';
-import {Patient, PatientFilters, PatientStats, PatientStatus} from "@/data/models/patient.model.ts";
+import { MOCK_PATIENTS, MOCK_METRICS, delay } from '../data/mocks/mock-data';
+import {Patient, PatientFilters, PatientStats, PatientStatus} from "../data/models/patient.model.ts";
 
 // In-memory mutable store (simulates DB mutations per session)
 let patientsStore: Patient[] = [...MOCK_PATIENTS];

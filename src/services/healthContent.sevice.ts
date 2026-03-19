@@ -1,5 +1,5 @@
-import {delay, MOCK_CONTENT } from "@/data/mocks/mock-data.ts";
-import {ContentFilters, HealthContent} from "@/data/models/healthContent.model.ts";
+import {delay, MOCK_CONTENT } from "../data/mocks/mock-data";
+import {ContentFilters, HealthContent} from "../data/models/healthContent.model.ts";
 
 let contentStore: HealthContent[] = [...MOCK_CONTENT];
 

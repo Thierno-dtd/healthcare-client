@@ -1,5 +1,5 @@
 import type { LoginCredentials, LoginResult, User } from '../data/models/user.model';
-import { MOCK_USERS, DEMO_CREDENTIALS, delay } from '@/data/mocks/mock-data';
+import { MOCK_USERS, DEMO_CREDENTIALS, delay } from '../data/mocks/mock-data';
 
 class AuthService {
     private readonly TOKEN_KEY = 'mediconnect_token';

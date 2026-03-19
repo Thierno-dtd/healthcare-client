@@ -1,42 +1,46 @@
 import { create } from 'zustand';
 
-interface UIState {
+interface UIStoreState {
     sidebarOpen: boolean;
     collapsedSections: Record<number, boolean>;
     showNotifications: boolean;
     activeModal: string | null;
 
-    // Actions
     toggleSidebar: () => void;
     setSidebarOpen: (open: boolean) => void;
     toggleSection: (index: number) => void;
     toggleNotifications: () => void;
     setShowNotifications: (show: boolean) => void;
-    openModal: (modalId: string) => void;
+    openModal: (id: string) => void;
     closeModal: () => void;
 }
 
-export const useUIStore = create<UIState>()((set) => ({
+export const useUIStore = create<UIStoreState>()((set) => ({
     sidebarOpen: false,
     collapsedSections: {},
     showNotifications: false,
     activeModal: null,
 
-    toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-    setSidebarOpen: (open) => set({ sidebarOpen: open }),
+    toggleSidebar: () =>
+        set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+
+    setSidebarOpen: (open) =>
+        set({ sidebarOpen: open }),
 
     toggleSection: (index) =>
-        set((state) => ({
+        set((s) => ({
             collapsedSections: {
-                ...state.collapsedSections,
-                [index]: !state.collapsedSections[index],
+                ...s.collapsedSections,
+                [index]: !s.collapsedSections[index],
             },
         })),
 
     toggleNotifications: () =>
-        set((state) => ({ showNotifications: !state.showNotifications })),
-    setShowNotifications: (show) => set({ showNotifications: show }),
+        set((s) => ({ showNotifications: !s.showNotifications })),
 
-    openModal: (modalId) => set({ activeModal: modalId }),
+    setShowNotifications: (show) =>
+        set({ showNotifications: show }),
+
+    openModal: (id) => set({ activeModal: id }),
     closeModal: () => set({ activeModal: null }),
 }));

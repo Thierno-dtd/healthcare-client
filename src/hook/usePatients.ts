@@ -1,10 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { patientService } from '../services/patient.service';
-import {Patient, PatientFilters, PatientStatus} from "@/data/models/patient.model.ts";
+import type { Patient, PatientFilters, PatientStatus } from '@/data/models/patient.model';
 
-
-// ─── Query Keys (centralized for cache invalidation) ─────────
 export const PATIENT_KEYS = {
     all: ['patients'] as const,
     list: (filters: PatientFilters) => ['patients', 'list', filters] as const,
@@ -26,7 +24,7 @@ export function usePatients(initialFilters: PatientFilters = {}) {
         queryKey: PATIENT_KEYS.list(filters),
         queryFn: () => patientService.getPatients(filters),
         staleTime: 2 * 60 * 1000,
-        placeholderData: (prev) => prev, // Keep previous data while loading
+        placeholderData: (prev) => prev,
     });
 
     const setSearch = useCallback((search: string) => {
@@ -45,18 +43,11 @@ export function usePatients(initialFilters: PatientFilters = {}) {
         setFilters({ page: 1, pageSize: 10, status: 'all' });
     }, []);
 
-    return {
-        ...query,
-        filters,
-        setSearch,
-        setStatus,
-        setPage,
-        resetFilters,
-    };
+    return { ...query, filters, setSearch, setStatus, setPage, resetFilters };
 }
 
 // ─── Single patient hook ──────────────────────────────────────
-export function usePatients(id: string) {
+export function usePatient(id: string) {
     return useQuery({
         queryKey: PATIENT_KEYS.detail(id),
         queryFn: () => patientService.getPatientById(id),
@@ -85,14 +76,11 @@ export function usePatientStats(filters: { doctorId?: string; hospitalId?: strin
 // ─── Mutation: update status ──────────────────────────────────
 export function useUpdatePatientStatus() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: ({ id, status }: { id: string; status: PatientStatus }) =>
             patientService.updatePatientStatus(id, status),
         onSuccess: (updatedPatient) => {
-            // Update detail cache
             queryClient.setQueryData(PATIENT_KEYS.detail(updatedPatient.id), updatedPatient);
-            // Invalidate list queries
             queryClient.invalidateQueries({ queryKey: PATIENT_KEYS.all });
         },
     });
@@ -101,7 +89,6 @@ export function useUpdatePatientStatus() {
 // ─── Mutation: create patient ─────────────────────────────────
 export function useCreatePatient() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: (data: Omit<Patient, 'id' | 'createdAt' | 'lastActivity'>) =>
             patientService.createPatient(data),
@@ -114,7 +101,6 @@ export function useCreatePatient() {
 // ─── Mutation: update patient ─────────────────────────────────
 export function useUpdatePatient() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: ({ id, updates }: { id: string; updates: Partial<Patient> }) =>
             patientService.updatePatient(id, updates),
@@ -128,7 +114,6 @@ export function useUpdatePatient() {
 // ─── Mutation: delete patient ─────────────────────────────────
 export function useDeletePatient() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: (id: string) => patientService.deletePatient(id),
         onSuccess: () => {

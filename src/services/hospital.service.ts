@@ -1,5 +1,5 @@
-import {delay, MOCK_HOSPITALS} from '@/data/mocks/mock-data';
-import {Hospital, HospitalFilters} from "@/data/models/hospital.model.ts";
+import {delay, MOCK_HOSPITALS} from '../data/mocks/mock-data';
+import {Hospital, HospitalFilters} from "../data/models/hospital.model.ts";
 
 let hospitalsStore: Hospital[] = [...MOCK_HOSPITALS];
 

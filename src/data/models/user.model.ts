@@ -5,9 +5,10 @@ export interface User {
     email: string;
     name: string;
     role: UserRole;
-    avatar?: string;
+    avatar?: string;           // initiales ou URL
     hospitalId?: string;
     createdAt: string;
+
 }
 
 export interface AuthState {

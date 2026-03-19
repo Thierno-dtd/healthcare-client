@@ -1,5 +1,5 @@
-import type { DashboardStats, ChartDataPoint } from '@/data/models';
-import {delay} from "@/data/mocks/mock-data.ts";
+import type { DashboardStats, ChartDataPoint } from '../data/models';
+import {delay} from "../data/mocks/mock-data";
 
 class DashboardService {
     async getDoctorDashboardStats(doctorId: string): Promise<DashboardStats> {

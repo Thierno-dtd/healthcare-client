@@ -1,11 +1,8 @@
-// ============================================================
-// MOCK DATA — Single source of truth for all fake data
-// ============================================================
 
 import type {
     Alert
 } from '../models';
-import {User} from "@/data/models/user.model.ts";
+import {User, UserRole} from "@/data/models/user.model.ts";
 import {Hospital} from "@/data/models/hospital.model.ts";
 import {Doctor} from "@/data/models/doctor.model.ts";
 import {HealthMetric, Patient} from "@/data/models/patient.model.ts";
@@ -542,3 +539,180 @@ export const MOCK_CONTENT: HealthContent[] = [
         isPublished: false,
     },
 ];
+
+
+
+// ─── Notification mock (aligné avec TopBar) ───────────────────
+// TopBar utilise : notif.roles, notif.read, notif.message, notif.date, notif.id, notif.type, notif.title
+export interface MockNotification {
+    id: string;
+    type: 'alert' | 'message' | 'system' | 'appointment';
+    title: string;
+    message: string;
+    date: Date;
+    read: boolean;
+    roles?: UserRole[];         // undefined = visible par tous
+}
+
+export const NOTIFICATIONS: MockNotification[] = [
+    {
+        id: 'n_001',
+        type: 'alert',
+        title: 'Alerte critique — Jean Dubois',
+        message: 'Tension artérielle : 185 mmHg. Intervention requise.',
+        date: new Date(Date.now() - 25 * 60 * 1000),
+        read: false,
+        roles: ['doctor'],
+    },
+    {
+        id: 'n_002',
+        type: 'message',
+        title: 'Nouveau message de Sophie Lambert',
+        message: "Bonjour docteur, j'ai des douleurs depuis hier soir...",
+        date: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        read: false,
+        roles: ['doctor'],
+    },
+    {
+        id: 'n_003',
+        type: 'system',
+        title: 'Compte patient validé',
+        message: 'Le compte de Sophie Lambert a été activé avec succès.',
+        date: new Date(Date.now() - 5 * 60 * 60 * 1000),
+        read: true,
+        roles: ['doctor', 'hospital_manager'],
+    },
+    {
+        id: 'n_004',
+        type: 'system',
+        title: 'Nouveau médecin enregistré',
+        message: 'Dr. Amélie Petit a rejoint votre établissement.',
+        date: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        read: false,
+        roles: ['hospital_manager'],
+    },
+    {
+        id: 'n_005',
+        type: 'system',
+        title: 'Nouvel hôpital inscrit',
+        message: 'Centre Médical Bordeaux a été ajouté à la plateforme.',
+        date: new Date(Date.now() - 48 * 60 * 60 * 1000),
+        read: false,
+        roles: ['admin'],
+    },
+    {
+        id: 'n_006',
+        type: 'appointment',
+        title: 'Rapport hebdomadaire disponible',
+        message: 'Le rapport de la semaine est prêt à être consulté.',
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        read: true,
+        // pas de roles = visible par tous
+    },
+];
+
+// ─── MenuItem & MenuSection types ────────────────────────────
+export interface MenuItem {
+    id: string;
+    label: string;
+    icon: string;
+    route: string;
+    badge?: string;
+}
+
+export interface MenuSection {
+    section: string;
+    items: MenuItem[];
+}
+
+// ─── Menu par rôle (utilisé par Sidebar) ─────────────────────
+const MENU_DOCTOR: MenuSection[] = [
+    {
+        section: 'Principal',
+        items: [
+            { id: 'dashboard', label: 'Tableau de bord', icon: 'fas fa-tachometer-alt', route: '/dashboard' },
+            { id: 'patients',  label: 'Mes patients',    icon: 'fas fa-users',           route: '/patients' },
+            { id: 'alerts',    label: 'Alertes',          icon: 'fas fa-bell',            route: '/alerts', badge: '3' },
+        ],
+    },
+    {
+        section: 'Communication',
+        items: [
+            { id: 'messages',      label: 'Messages',       icon: 'fas fa-envelope',    route: '/messages' },
+            { id: 'notifications', label: 'Notifications',  icon: 'fas fa-bell-o',      route: '/notifications' },
+        ],
+    },
+    {
+        section: 'Compte',
+        items: [
+            { id: 'profile',  label: 'Profil',     icon: 'fas fa-user-circle', route: '/profile' },
+            { id: 'settings', label: 'Paramètres', icon: 'fas fa-cog',         route: '/settings' },
+        ],
+    },
+];
+
+const MENU_MANAGER: MenuSection[] = [
+    {
+        section: 'Principal',
+        items: [
+            { id: 'dashboard', label: 'Tableau de bord', icon: 'fas fa-tachometer-alt', route: '/dashboard' },
+            { id: 'patients',  label: 'Patients',         icon: 'fas fa-users',          route: '/patients' },
+            { id: 'doctors',   label: 'Médecins',          icon: 'fas fa-user-md',        route: '/doctors' },
+        ],
+    },
+    {
+        section: 'Alertes & Messages',
+        items: [
+            { id: 'alerts',        label: 'Alertes',        icon: 'fas fa-bell',    route: '/alerts' },
+            { id: 'notifications', label: 'Notifications',  icon: 'fas fa-envelope',route: '/notifications' },
+        ],
+    },
+    {
+        section: 'Compte',
+        items: [
+            { id: 'profile',  label: 'Profil',     icon: 'fas fa-user-circle', route: '/profile' },
+            { id: 'settings', label: 'Paramètres', icon: 'fas fa-cog',         route: '/settings' },
+        ],
+    },
+];
+
+const MENU_ADMIN: MenuSection[] = [
+    {
+        section: 'Administration',
+        items: [
+            { id: 'dashboard',  label: 'Tableau de bord',     icon: 'fas fa-tachometer-alt',   route: '/dashboard' },
+            { id: 'hospitals',  label: 'Établissements',       icon: 'fas fa-hospital',          route: '/hospitals' },
+            { id: 'doctors',    label: 'Médecins',              icon: 'fas fa-user-md',           route: '/doctors' },
+            { id: 'patients',   label: 'Patients',              icon: 'fas fa-users',             route: '/patients' },
+        ],
+    },
+    {
+        section: 'Contenu & Carte',
+        items: [
+            { id: 'content', label: 'Contenu santé',         icon: 'fas fa-newspaper',        route: '/content' },
+            { id: 'map',     label: 'Carte établissements',  icon: 'fas fa-map-marker-alt',   route: '/map' },
+        ],
+    },
+    {
+        section: 'Système',
+        items: [
+            { id: 'alerts',        label: 'Alertes',        icon: 'fas fa-bell',        route: '/alerts' },
+            { id: 'notifications', label: 'Notifications',  icon: 'fas fa-envelope',    route: '/notifications' },
+            { id: 'profile',       label: 'Profil',         icon: 'fas fa-user-circle', route: '/profile' },
+            { id: 'settings',      label: 'Paramètres',     icon: 'fas fa-cog',         route: '/settings' },
+        ],
+    },
+];
+
+/**
+ * Retourne les sections de menu selon le rôle.
+ * Utilisée par Sidebar : `getMenuForRole(user.role)`
+ */
+export function getMenuForRole(role: UserRole): MenuSection[] {
+    switch (role) {
+        case 'doctor':           return MENU_DOCTOR;
+        case 'hospital_manager': return MENU_MANAGER;
+        case 'admin':            return MENU_ADMIN;
+        default:                 return MENU_DOCTOR;
+    }
+}

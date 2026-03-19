@@ -1,5 +1,5 @@
-import type { Alert, AlertFilters, PaginatedResult } from '@/data/models';
-import { MOCK_ALERTS, delay } from '@/data/mocks/mock-data';
+import type { Alert, AlertFilters, PaginatedResult } from '../data/models';
+import { MOCK_ALERTS, delay } from '../data/mocks/mock-data';
 
 let alertsStore: Alert[] = [...MOCK_ALERTS];
 

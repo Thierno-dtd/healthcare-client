@@ -15,8 +15,8 @@ import {StatCard} from "@shared/components/ui/StatCard.tsx";
 import {LoadingSpinner} from "@shared/components/ui/LoadingSpinner.tsx";
 import {EmptyState} from "@shared/components/ui/EmptyState.tsx";
 import {ErrorMessage} from "@shared/components/ui/ErrorMessage.tsx";
-import PatientTable from "@shared/components/ui";
 import {Pagination} from "@shared/components/ui/Pagination.tsx";
+import PatientTable from "@features/patients/components/PatientTable.tsx";
 
 // ─── View mode toggle ─────────────────────────────────────────
 type ViewMode = 'table' | 'grid';

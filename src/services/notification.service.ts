@@ -1,5 +1,5 @@
-import {delay, MOCK_NOTIFICATIONS} from "@/data/mocks/mock-data.ts";
-import {Notification} from "@/data/models/notification.model.ts";
+import {delay, MOCK_NOTIFICATIONS} from "../data/mocks/mock-data";
+import {Notification} from "../data/models/notification.model.ts";
 
 let notificationsStore: Notification[] = [...MOCK_NOTIFICATIONS];
 

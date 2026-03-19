@@ -1,7 +1,3 @@
-// ============================================================
-// PatientTable — Feature component
-// ============================================================
-
 import React from 'react';
 import {Patient} from "@/data/models/patient.model.ts";
 import {calculateAge, formatRelativeDate} from "@core/utils";
