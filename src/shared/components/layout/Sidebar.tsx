@@ -4,11 +4,9 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '@core/auth/auth.store';
-import { useUIStore } from '@core/stores/ui.store';
-import { getMenuForRole } from '@shared/data/mock-data';
-import { ROLE_LABELS } from '@shared/utils/constants';
-import { getAvatarGradient } from '@shared/utils/helpers';
+import {useAuthStore} from "@/store/auth.store.ts";
+import {useUIStore} from "@/store/ui.store.ts";
+import {getAvatarGradient, ROLE_LABELS} from "@core/utils";
 
 interface SidebarProps {
   isOpen: boolean;

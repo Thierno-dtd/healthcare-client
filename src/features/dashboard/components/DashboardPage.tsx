@@ -1,19 +1,17 @@
-// ============================================================
-// DashboardPage — Role-aware dashboard
-// ============================================================
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import {useAuthStore} from "@/store/auth.store.ts";
+import {LoadingSpinner} from "@shared/components/ui/LoadingSpinner.tsx";
+import {StatCard} from "@shared/components/ui/StatCard.tsx";
+import {useActivityChart, useAlerts, useAlertsChart, useDashboardStats} from "@/hook";
+import {formatRelativeDate, ROLE_LABELS} from "@core/utils";
+import {Avatar} from "@shared/components/ui/Avatar.tsx";
+import {AlertSeverityBadge} from "@shared/components/ui/AlertBadge.tsx";
 
-import { useAuthStore } from '../../../core/stores/auth.store';
-import { useDashboardStats, useActivityChart, useAlertsChart } from '../../../core/hooks';
-import { useAlerts } from '../../../core/hooks';
-import { StatCard, AlertSeverityBadge, Avatar, LoadingSpinner } from '../../../shared/components/ui';
-import { formatRelativeDate, ROLE_LABELS } from '../../../shared/utils';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAuthStore();

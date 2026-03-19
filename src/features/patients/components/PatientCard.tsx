@@ -1,7 +1,8 @@
 import React from 'react';
-import { Avatar, PatientStatusBadge } from '@/shared/components/ui';
-import { formatRelativeDate, calculateAge, METRIC_ICONS } from '../../../shared/utils';
 import {Patient} from "@/data/models/patient.model.ts";
+import {calculateAge, formatRelativeDate} from "@core/utils";
+import {Avatar} from "@shared/components/ui/Avatar.tsx";
+import {PatientStatusBadge} from "@shared/components/ui/StatusBadge.tsx";
 
 interface PatientCardProps {
     patient: Patient;

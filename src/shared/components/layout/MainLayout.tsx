@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import {useUIStore} from "@/store/ui.store.ts";
+import {PAGE_TITLES} from "@core/utils/constants.ts";
 
 
 const MainLayout: React.FC = () => {

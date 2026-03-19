@@ -2,30 +2,21 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-// Store
-import { useAuthStore } from '../../../core/stores/auth.store';
-
-// Hooks
-import {
-    usePatients,
-    usePatientStats,
-    useUpdatePatientStatus,
-} from '../../../core/hooks/usePatients';
 
 // Feature components
-import PatientTable from '../../../features/patients/components/PatientTable';
 import PatientCard from '../../../features/patients/components/PatientCard';
 
 // Shared components
-import {
-    StatCard,
-    EmptyState,
-    ErrorMessage,
-    Pagination,
-    LoadingSpinner,
-} from '../../../shared/components/ui';
 
-import type { Patient, PatientStatus } from '../../../core/models';
+import {useAuthStore} from "@/store/auth.store.ts";
+import {usePatients, usePatientStats, useUpdatePatientStatus} from "@/hook/usePatients.ts";
+import {Patient, PatientStatus} from "@/data/models/patient.model.ts";
+import {StatCard} from "@shared/components/ui/StatCard.tsx";
+import {LoadingSpinner} from "@shared/components/ui/LoadingSpinner.tsx";
+import {EmptyState} from "@shared/components/ui/EmptyState.tsx";
+import {ErrorMessage} from "@shared/components/ui/ErrorMessage.tsx";
+import PatientTable from "@shared/components/ui";
+import {Pagination} from "@shared/components/ui/Pagination.tsx";
 
 // ─── View mode toggle ─────────────────────────────────────────
 type ViewMode = 'table' | 'grid';

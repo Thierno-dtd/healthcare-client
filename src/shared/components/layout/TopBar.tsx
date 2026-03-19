@@ -1,12 +1,10 @@
-// ============================================================
-// TopBar - Barre supérieure typée
-// ============================================================
 
 import React from 'react';
-import { useAuthStore } from '@core/auth/auth.store';
-import { useUIStore } from '@core/stores/ui.store';
-import { NOTIFICATIONS } from '@shared/data/mock-data';
-import { getNotificationIcon, formatRelativeTime } from '@shared/utils/helpers';
+import {useAuthStore} from "@/store/auth.store.ts";
+import {useUIStore} from "@/store/ui.store.ts";
+import {formatRelativeTime, getNotificationIcon} from "@core/utils";
+import {MOCK_NOTIFICATIONS} from "@/data/mocks/mock-data.tsx";
+
 
 interface TopBarProps {
   pageTitle: string;
@@ -18,7 +16,7 @@ const TopBar: React.FC<TopBarProps> = ({ pageTitle, onMenuToggle }) => {
   const { showNotifications, toggleNotifications } = useUIStore();
 
   // Filter notifications by user role
-  const userNotifications = NOTIFICATIONS.filter(
+  const userNotifications = MOCK_NOTIFICATIONS.filter(
     (notif) => !notif.roles || notif.roles.includes(user?.role ?? '')
   );
 

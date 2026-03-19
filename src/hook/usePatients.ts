@@ -1,9 +1,3 @@
-// ============================================================
-// usePatients HOOK — Patient business logic
-// ============================================================
-// All component-level state, filtering, and service calls
-// live here. Components stay clean and focused on rendering.
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { patientService } from '../services/patient.service';
@@ -62,7 +56,7 @@ export function usePatients(initialFilters: PatientFilters = {}) {
 }
 
 // ─── Single patient hook ──────────────────────────────────────
-export function usePatient(id: string) {
+export function usePatients(id: string) {
     return useQuery({
         queryKey: PATIENT_KEYS.detail(id),
         queryFn: () => patientService.getPatientById(id),

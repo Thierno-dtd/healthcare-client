@@ -1,4 +1,4 @@
-import type { UserRole } from './user.types';
+import {UserRole} from "@/data/models/user.model.ts";
 
 /** Item de menu dans la sidebar */
 export interface MenuItem {

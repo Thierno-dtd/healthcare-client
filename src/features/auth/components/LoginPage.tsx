@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuthStore } from '../../../core/stores/auth.store';
+import {useAuthStore} from "@/store/auth.store.ts";
 
 const DEMO_ACCOUNTS = [
     { email: 'dr.martin@clinic.com', password: 'password123', role: 'Médecin', icon: 'fas fa-user-md', color: '#2a6b8f' },

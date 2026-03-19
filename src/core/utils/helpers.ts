@@ -148,3 +148,17 @@ export const getNotificationIcon = (type: string): string => {
     };
     return icons[type] ?? 'fas fa-info-circle';
 };
+
+const GRADIENTS = [
+    { primary: '#2a6b8f', secondary: '#4a9d7c' },
+    { primary: '#7c3aed', secondary: '#a855f7' },
+    { primary: '#059669', secondary: '#14b8a6' },
+    { primary: '#d97706', secondary: '#f59e0b' },
+    { primary: '#dc2626', secondary: '#ef4444' },
+    { primary: '#2563eb', secondary: '#3b82f6' },
+];
+
+export const getAvatarGradient = (name: string = '') => {
+    const idx = (name.charCodeAt(0) || 0) % GRADIENTS.length;
+    return GRADIENTS[idx];
+};

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import {useAuthStore} from "@/store/auth.store.ts";
+import {UserRole} from "@/data/models/user.model.ts";
 
 
 interface ProtectedRouteProps {
@@ -11,9 +13,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
                                                            children,
                                                            allowedRoles = [],
                                                        }) => {
-    const { isAuthenticated, user, loading } = useAuthStore();
+    const { isAuthenticated, user, isLoading } = useAuthStore();
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>
