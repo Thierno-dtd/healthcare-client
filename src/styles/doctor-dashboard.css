@@ -1,0 +1,207 @@
+
+:root {
+    --primary:            hsl(207, 55%, 36%);
+    --primary-foreground: #ffffff;
+    --foreground:         hsl(222, 47%, 11%);
+    --muted-foreground:   hsl(215, 16%, 47%);
+    --muted:              hsl(210, 40%, 96%);
+    --card:               #ffffff;
+    --background:         hsl(210, 40%, 98%);
+    --border:             hsl(214, 32%, 91%);
+    --secondary:          hsl(210, 40%, 96%);
+    --destructive:        hsl(0, 72%, 51%);
+    --destructive-foreground: #ffffff;
+    --success:            hsl(152, 55%, 42%);
+    --warning:            hsl(30, 90%, 55%);
+    --info:               hsl(207, 55%, 50%);
+
+    /* Sidebar tokens */
+    --sidebar:             hsl(222, 47%, 11%);
+    --sidebar-foreground:  hsl(210, 40%, 96%);
+    --sidebar-primary:     hsl(152, 55%, 60%);
+    --sidebar-primary-foreground: hsl(222, 47%, 11%);
+    --sidebar-accent:      hsl(222, 40%, 20%);
+    --sidebar-border:      hsl(222, 40%, 18%);
+}
+
+/* ── Hero Banner ─────────────────────────────────────────────
+   Used in DoctorDashboard at the top
+   Deep blue gradient, white text, rounded-xl
+*/
+.hero-banner {
+    background: linear-gradient(135deg, hsl(207, 55%, 20%) 0%, hsl(207, 55%, 36%) 100%);
+    border-radius: 16px;
+    padding: 24px 28px;
+    color: #ffffff;
+    margin-bottom: 0; /* spacing handled by parent gap */
+}
+
+/* ── Stat Card ───────────────────────────────────────────────
+   White card, flex row, rounded-xl, shadow-sm
+*/
+.stat-card {
+    background-color: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+}
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ── Stat Icon ───────────────────────────────────────────────
+   Square rounded icon container inside stat-card
+*/
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ── Medical Card ────────────────────────────────────────────
+   White card with padding and subtle shadow — used for charts,
+   alert lists, patient lists
+*/
+.medical-card {
+    background-color: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+}
+
+/* ── Feature Card ────────────────────────────────────────────
+   Clickable link card with hover lift — quick actions
+*/
+.feature-card {
+    background-color: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+    text-decoration: none;
+    display: block;
+}
+.feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(42, 107, 143, 0.12);
+    border-color: var(--primary);
+}
+
+/* ── Badge Status ────────────────────────────────────────────
+   Inline pill badge, used for compliant/partial/urgent/warning
+*/
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.badge-active {
+    background-color: hsl(152, 55%, 90%);
+    color: hsl(152, 55%, 25%);
+}
+
+.badge-warning {
+    background-color: hsl(30, 90%, 92%);
+    color: hsl(30, 90%, 30%);
+}
+
+.badge-urgent {
+    background-color: hsl(0, 72%, 94%);
+    color: hsl(0, 72%, 35%);
+}
+
+.badge-terminated {
+    background-color: hsl(210, 16%, 93%);
+    color: hsl(215, 16%, 40%);
+}
+
+/* ── Sidebar Nav Item ────────────────────────────────────────
+   Used in DoctorLayout sidebar links
+*/
+.sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: hsl(210, 40%, 80%);
+    text-decoration: none;
+    transition: background-color 0.15s, color 0.15s;
+}
+.sidebar-nav-item:hover {
+    background-color: rgba(255,255,255,0.08);
+    color: #ffffff;
+}
+.sidebar-nav-item.active {
+    background-color: rgba(42, 107, 143, 0.25);
+    color: #ffffff;
+}
+
+/* ── Tailwind utility aliases for reference code ─────────────
+   These map Tailwind class names that reference framer-motion
+   components and design tokens not covered by Tailwind base
+*/
+
+/* text-foreground → foreground color */
+.text-foreground  { color: var(--foreground) !important; }
+.text-muted-foreground { color: var(--muted-foreground) !important; }
+.text-primary     { color: var(--primary) !important; }
+.text-destructive { color: var(--destructive) !important; }
+.text-success     { color: var(--success) !important; }
+.text-warning     { color: var(--warning) !important; }
+.text-info        { color: var(--info) !important; }
+
+/* bg aliases */
+.bg-card          { background-color: var(--card) !important; }
+.bg-muted         { background-color: var(--muted) !important; }
+.bg-secondary     { background-color: var(--secondary) !important; }
+.bg-primary       { background-color: var(--primary) !important; }
+.bg-destructive   { background-color: var(--destructive) !important; }
+
+.bg-primary\/10   { background-color: hsl(207, 55%, 92%) !important; }
+.bg-muted\/30     { background-color: hsl(210, 40%, 97%) !important; }
+.bg-destructive\/5  { background-color: hsl(0, 72%, 98%) !important; }
+.bg-white\/10     { background-color: rgba(255,255,255,0.10) !important; }
+.bg-white\/20     { background-color: rgba(255,255,255,0.20) !important; }
+
+/* border aliases */
+.border-border        { border-color: var(--border) !important; }
+.border-destructive\/20 { border-color: hsl(0, 72%, 80%) !important; }
+
+/* text-primary-foreground */
+.text-primary-foreground { color: var(--primary-foreground) !important; }
+.text-destructive-foreground { color: var(--destructive-foreground) !important; }
+.bg-primary\/10.text-primary { color: var(--primary) !important; }
+
+/* Sidebar */
+.bg-sidebar        { background-color: var(--sidebar) !important; }
+.text-sidebar-foreground { color: var(--sidebar-foreground) !important; }
+.text-sidebar-primary { color: var(--sidebar-primary) !important; }
+.bg-sidebar-accent { background-color: var(--sidebar-accent) !important; }
+.border-sidebar-border { border-color: var(--sidebar-border) !important; }
+.text-sidebar-primary-foreground { color: var(--sidebar-primary-foreground) !important; }
+
+/* focus:ring-primary\/20 */
+.focus\:ring-primary\/20:focus {
+    --tw-ring-color: hsla(207, 55%, 36%, 0.2);
+    box-shadow: 0 0 0 3px var(--tw-ring-color);
+}

@@ -1,4 +1,3 @@
-// src/routes/routes.tsx
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
@@ -9,42 +8,42 @@ import NotFound from '@features/error/components/NotFound';
 import { LoadingSpinner } from '@shared/components/ui/LoadingSpinner';
 
 // ─── Lazy-loaded pages ────────────────────────────────────────
-const LoginPage          = lazy(() => import('@features/auth/components/LoginPage'));
-const DashboardPage      = lazy(() => import('@features/dashboard/components/DashboardPage'));
+const LoginPage               = lazy(() => import('@features/auth/components/LoginPage'));
+const DashboardPage           = lazy(() => import('@features/dashboard/components/DashboardPage'));
+const DoctorDashboardPage     = lazy(() => import('@features/dashboard/components/DoctorDashboardPage'));
 
 // Patients
-const PatientsPage       = lazy(() => import('@features/patients/components/PatientsPage'));
-const PatientDetailPage  = lazy(() => import('@features/patients/components/PatientDetailPage'));
-const NewPatientPage     = lazy(() => import('@features/patients/components/NewPatientPage'));
+const PatientsPage            = lazy(() => import('@features/patients/components/PatientsPage'));
+const PatientDetailPage       = lazy(() => import('@features/patients/components/PatientDetailPage'));
+const PatientFollowUpPage     = lazy(() => import('@features/patients/components/PatientFollowUpPage'));
+const NewPatientPage          = lazy(() => import('@features/patients/components/NewPatientPage'));
+
+// Doctor features
+const PatientRequestsPage     = lazy(() => import('@features/patientRequests/components/PatientRequestsPage'));
 
 // Alerts
-const AlertsPage         = lazy(() => import('@features/alerts/components/AlertsPage'));
+const AlertsPage              = lazy(() => import('@features/alerts/components/AlertsPage'));
 
-// Doctors
-const DoctorsPage        = lazy(() => import('@features/doctors/components/DoctorsPage'));
+// Doctors & Hospitals
+const DoctorsPage             = lazy(() => import('@features/doctors/components/DoctorsPage'));
+const HospitalsPage           = lazy(() => import('@features/hospitals/components/HospitalsPage'));
 
-// Hospitals
-const HospitalsPage      = lazy(() => import('@features/hospitals/components/HospitalsPage'));
+// Notifications (doctor sees these, not messages)
+const NotificationsPage       = lazy(() => import('@features/notifications/components/NotificationsPage'));
 
-// Messages & Notifications
-const MessagesPage       = lazy(() => import('@features/messages/components/MessagesPage'));
-const NotificationsPage  = lazy(() => import('@features/notifications/components/NotificationsPage'));
-
-// Health Content
-const ContentPage        = lazy(() => import('@features/contents/components/ContentPage'));
-
-// Map
-const MapPage            = lazy(() => import('@features/mapVisualiser/components/MapPage'));
+// Health Content & Map
+const ContentPage             = lazy(() => import('@features/contents/components/ContentPage'));
+const MapPage                 = lazy(() => import('@features/mapVisualiser/components/MapPage'));
 
 // Profile & Settings
-const ProfilePage        = lazy(() => import('@features/profile/components/ProfilePage'));
-const SettingsPage       = lazy(() => import('@features/settings/components/settingsPage'));
+const ProfilePage             = lazy(() => import('@features/profile/components/ProfilePage'));
+const SettingsPage            = lazy(() => import('@features/settings/components/settingsPage'));
 
 // ─── Page loader ─────────────────────────────────────────────
 const PageLoader = () => <LoadingSpinner size="lg" text="Chargement..." />;
 
 const AppRoutes: React.FC = () => {
-    const { isAuthenticated, restoreSession } = useAuthStore();
+    const { isAuthenticated, restoreSession, user } = useAuthStore();
 
     useEffect(() => {
         restoreSession();
@@ -56,11 +55,11 @@ const AppRoutes: React.FC = () => {
                 {/* ── Public ── */}
                 <Route
                     path="/"
-                    element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}
+                    element={<Navigate to={isAuthenticated ? (user?.role === 'doctor' ? '/doctor-dashboard' : '/dashboard') : '/login'} replace />}
                 />
                 <Route
                     path="/login"
-                    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+                    element={isAuthenticated ? <Navigate to={user?.role === 'doctor' ? '/doctor-dashboard' : '/dashboard'} replace /> : <LoginPage />}
                 />
 
                 {/* ── Protected (inside MainLayout) ── */}
@@ -71,13 +70,43 @@ const AppRoutes: React.FC = () => {
                         </ProtectedRoute>
                     }
                 >
-                    {/* Dashboard */}
+                    {/* Dashboard — role-aware */}
                     <Route path="/dashboard" element={<DashboardPage />} />
+
+                    {/* Doctor Dashboard */}
+                    <Route
+                        path="/doctor-dashboard"
+                        element={
+                            <ProtectedRoute allowedRoles={['doctor']}>
+                                <DoctorDashboardPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Patient Requests — doctor only */}
+                    <Route
+                        path="/patient-requests"
+                        element={
+                            <ProtectedRoute allowedRoles={['doctor']}>
+                                <PatientRequestsPage />
+                            </ProtectedRoute>
+                        }
+                    />
 
                     {/* Patients */}
                     <Route path="/patients" element={<PatientsPage />} />
                     <Route path="/patients/new" element={<NewPatientPage />} />
                     <Route path="/patients/:id" element={<PatientDetailPage />} />
+
+                    {/* Patient Follow-Up (doctor's detailed view with measurements, prescriptions) */}
+                    <Route
+                        path="/patients/:id/follow-up"
+                        element={
+                            <ProtectedRoute allowedRoles={['doctor']}>
+                                <PatientFollowUpPage />
+                            </ProtectedRoute>
+                        }
+                    />
 
                     {/* Alerts */}
                     <Route path="/alerts" element={<AlertsPage />} />
@@ -122,8 +151,7 @@ const AppRoutes: React.FC = () => {
                         }
                     />
 
-                    {/* Messages & Notifications */}
-                    <Route path="/messages" element={<MessagesPage />} />
+                    {/* Notifications (doctor) — no messages inbox for doctor */}
                     <Route path="/notifications" element={<NotificationsPage />} />
 
                     {/* Profile & Settings */}
