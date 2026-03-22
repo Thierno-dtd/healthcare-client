@@ -8,3 +8,4 @@ export * from './useContent';
 export * from './useLogin';
 export * from './useMessages'
 export * from './useDoctorFeatures';
+export * from './useActivityFeed';

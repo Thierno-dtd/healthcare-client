@@ -891,6 +891,7 @@ const MENU_DOCTOR: MenuSection[] = [
         section: 'Suivi',
         items: [
             { id: 'notifications', label: 'Notifications envoyées', icon: 'fas fa-paper-plane', route: '/notifications' },
+            { id: 'monitoring', label: 'Suivi des patients', icon: 'fas fa-heartbeat', route: '/monitoring' },
         ],
     },
     {

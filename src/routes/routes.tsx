@@ -20,6 +20,7 @@ const NewPatientPage          = lazy(() => import('@features/patients/components
 
 // Doctor features
 const PatientRequestsPage     = lazy(() => import('@features/patientRequests/components/PatientRequestsPage'));
+const MonitoringPage = lazy(() => import('@features/monitoring/components/MonitoringPage'));
 
 // Alerts
 const AlertsPage              = lazy(() => import('@features/alerts/components/AlertsPage'));
@@ -89,6 +90,14 @@ const AppRoutes: React.FC = () => {
                         element={
                             <ProtectedRoute allowedRoles={['doctor']}>
                                 <PatientRequestsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/monitoring"
+                        element={
+                            <ProtectedRoute allowedRoles={['doctor']}>
+                                <MonitoringPage />
                             </ProtectedRoute>
                         }
                     />

@@ -12,4 +12,7 @@ export const PAGE_TITLES: Record<string, string> = {
     'content': 'Contenu de santé',
     'settings': 'Paramètres',
     'profile': 'Profil',
+    'monitoring': 'Suivi des patients',
+    'patient-requests': 'Demandes Patients',
+
 };
