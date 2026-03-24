@@ -72,7 +72,7 @@ const AppRoutes: React.FC = () => {
                     }
                 >
                     {/* Dashboard — role-aware */}
-                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/dashboard" element={<DoctorDashboardPage />} />
 
                     {/* Doctor Dashboard */}
                     <Route
