@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/auth.store';
 import { useAlerts, useMarkAlertRead, useResolveAlert, useMarkAllAlertsRead } from '@/hook/useAlerts';
@@ -6,9 +7,7 @@ import { LoadingSpinner } from '@/shared/components/ui/LoadingSpinner';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { ErrorMessage } from '@/shared/components/ui/ErrorMessage';
 import { Avatar } from '@/shared/components/ui/Avatar';
-import { AlertSeverityBadge } from '@/shared/components/ui/AlertBadge';
-import { Pagination } from '@/shared/components/ui/Pagination';
-import { formatRelativeDate } from '@/core/utils';
+import { isThisWeek } from '@/services/alert.service';
 import type { AlertSeverity } from '@/data/models';
 
 const METRIC_LABELS: Record<string, string> = {
@@ -29,44 +28,74 @@ const METRIC_ICONS: Record<string, string> = {
     inactivity: 'fas fa-bed',
 };
 
+const SEV_CONFIG = {
+    critical: { label: 'Critique', color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' },
+    high:     { label: 'Élevé',    color: '#ea580c', bg: '#ffedd5', border: '#fdba74' },
+    medium:   { label: 'Moyen',    color: '#ca8a04', bg: '#fef9c3', border: '#fde047' },
+    low:      { label: 'Faible',   color: '#16a34a', bg: '#dcfce7', border: '#86efac' },
+    all:      { label: 'Toutes',   color: '#2a6b8f', bg: '#dbeafe', border: '#93c5fd' },
+};
+
+function formatDateTime(dateStr: string): string {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    if (isToday) {
+        return `Aujourd'hui ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+        + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getWeekRange(): { start: Date; end: Date } {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const start = new Date(now);
+    start.setDate(now.getDate() + diffToMonday);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+}
+
 const AlertsPage: React.FC = () => {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const [filterSeverity, setFilterSeverity] = useState<AlertSeverity | 'all'>('all');
-    const [filterResolved, setFilterResolved] = useState<boolean | undefined>(false);
-    const [page, setPage] = useState(1);
 
     const { data: alertsResult, isLoading, isError, error, refetch } = useAlerts({
         doctorId: user?.role === 'doctor' ? 'd_001' : undefined,
-        severity: filterSeverity !== 'all' ? filterSeverity : undefined,
-        isResolved: filterResolved,
-        page,
-        pageSize: 10,
+        isResolved: false,
+        pageSize: 200,
     });
 
-    const markRead = useMarkAlertRead();
+    const markRead    = useMarkAlertRead();
     const resolveAlert = useResolveAlert();
-    const markAllRead = useMarkAllAlertsRead();
+    const markAllRead  = useMarkAllAlertsRead();
 
-    const alerts = alertsResult?.data ?? [];
-    const total = alertsResult?.total ?? 0;
-    const totalPages = alertsResult?.totalPages ?? 1;
-    const unread = alerts.filter((a) => !a.isRead).length;
+    const allAlerts  = alertsResult?.data ?? [];
+    const weekAlerts = allAlerts.filter(a => isThisWeek(a.createdAt));
+    const filtered   = filterSeverity === 'all'
+        ? weekAlerts
+        : weekAlerts.filter(a => a.severity === filterSeverity);
+
+    const unread    = weekAlerts.filter(a => !a.isRead).length;
+    const critCount = weekAlerts.filter(a => a.severity === 'critical').length;
+    const highCount = weekAlerts.filter(a => a.severity === 'high').length;
+    const medCount  = weekAlerts.filter(a => a.severity === 'medium').length;
+    const lowCount  = weekAlerts.filter(a => a.severity === 'low').length;
 
     const handleMarkRead = useCallback(async (id: string) => {
-        try {
-            await markRead.mutateAsync(id);
-        } catch {
-            toast.error('Erreur lors de la mise à jour');
-        }
+        try { await markRead.mutateAsync(id); } catch { toast.error('Erreur'); }
     }, [markRead]);
 
     const handleResolve = useCallback(async (id: string) => {
         try {
             await resolveAlert.mutateAsync({ id, resolvedBy: user?.id ?? '' });
             toast.success('Alerte résolue');
-        } catch {
-            toast.error('Erreur lors de la résolution');
-        }
+        } catch { toast.error('Erreur lors de la résolution'); }
     }, [resolveAlert, user]);
 
     const handleMarkAllRead = useCallback(async () => {
@@ -74,250 +103,238 @@ const AlertsPage: React.FC = () => {
         try {
             await markAllRead.mutateAsync('d_001');
             toast.success('Toutes les alertes marquées comme lues');
-        } catch {
-            toast.error('Erreur');
-        }
+        } catch { toast.error('Erreur'); }
     }, [markAllRead, user]);
+
+    const { start, end } = getWeekRange();
+    const weekLabel = `${start.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} – ${end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
 
     return (
         <div className="content-body">
-            {/* ── Header ─────────────────────────────────────────── */}
+            {/* ── Header ──────────────────────────────────────── */}
             <div style={{ marginBottom: 28 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                     <div>
-                        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
-                            Alertes
+                        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111827', marginBottom: 4 }}>
+                            Alertes de la semaine
                         </h1>
-                        <p style={{ color: '#6b7280', fontSize: 15 }}>
-                            Surveillez les anomalies de vos patients en temps réel
+                        <p style={{ color: '#6b7280', fontSize: 14 }}>
+                            <i className="fas fa-calendar-week" style={{ marginRight: 6, color: '#9ca3af' }} />
+                            {weekLabel}
                         </p>
                     </div>
                     {unread > 0 && (
                         <button
-                            className="btn btn-outline"
                             onClick={handleMarkAllRead}
                             disabled={markAllRead.isPending}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                                background: 'transparent', color: '#374151',
+                                border: '1px solid #e5e7eb', cursor: 'pointer',
+                            }}
                         >
-                            <i className="fas fa-check-double" style={{ marginRight: 8 }} />
-                            Tout marquer comme lu ({unread})
+                            <i className="fas fa-check-double" />
+                            Tout marquer lu ({unread})
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* ── Filters ─────────────────────────────────────────── */}
-            <div className="card" style={{ padding: '16px 24px', marginBottom: 24 }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {/* Severity filter */}
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => { setFilterSeverity(s); setPage(1); }}
+            {/* ── Summary cards ───────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+                {([
+                    { label: 'Critiques', count: critCount, sev: 'critical' as AlertSeverity },
+                    { label: 'Élevés',    count: highCount, sev: 'high'     as AlertSeverity },
+                    { label: 'Moyens',    count: medCount,  sev: 'medium'   as AlertSeverity },
+                    { label: 'Faibles',   count: lowCount,  sev: 'low'      as AlertSeverity },
+                ]).map(({ label, count, sev }) => {
+                    const cfg = SEV_CONFIG[sev];
+                    const active = filterSeverity === sev;
+                    return (
+                        <button
+                            key={sev}
+                            onClick={() => setFilterSeverity(active ? 'all' : sev)}
+                            style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                padding: '16px 18px', borderRadius: 10, cursor: 'pointer',
+                                background: active ? cfg.bg : 'white',
+                                border: `1.5px solid ${active ? cfg.color : '#f3f4f6'}`,
+                                boxShadow: active ? `0 0 0 3px ${cfg.bg}` : '0 1px 3px rgba(0,0,0,0.06)',
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, width: '100%', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {label}
+                                </span>
+                                {active && <i className="fas fa-check" style={{ fontSize: 10, color: cfg.color }} />}
+                            </div>
+                            <span style={{ fontSize: 28, fontWeight: 800, color: count > 0 ? cfg.color : '#9ca3af', lineHeight: 1 }}>
+                                {count}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* ── Liste des alertes ────────────────────────────── */}
+            {isError ? (
+                <div className="card" style={{ padding: 24 }}>
+                    <ErrorMessage
+                        message={error instanceof Error ? error.message : 'Erreur de chargement'}
+                        onRetry={() => refetch()}
+                    />
+                </div>
+            ) : isLoading ? (
+                <LoadingSpinner text="Chargement des alertes..." />
+            ) : filtered.length === 0 ? (
+                <div className="card" style={{ padding: 0 }}>
+                    <EmptyState
+                        icon={filterSeverity !== 'all' ? 'fas fa-filter' : 'fas fa-shield-alt'}
+                        title={filterSeverity !== 'all'
+                            ? `Aucune alerte "${SEV_CONFIG[filterSeverity].label}" cette semaine`
+                            : 'Aucune alerte cette semaine'}
+                        description={filterSeverity !== 'all' ? 'Essayez un autre filtre' : 'Tous vos patients sont stables'}
+                    />
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {filtered.map((alert) => {
+                        const cfg = SEV_CONFIG[alert.severity];
+                        const metricIcon  = METRIC_ICONS[alert.type]  ?? 'fas fa-exclamation-triangle';
+                        const metricLabel = METRIC_LABELS[alert.type] ?? alert.type;
+                        return (
+                            <div
+                                key={alert.id}
                                 style={{
-                                    padding: '6px 14px',
-                                    borderRadius: 20,
-                                    border: '1px solid',
-                                    cursor: 'pointer',
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    transition: 'all 0.2s',
-                                    borderColor: filterSeverity === s ? getSeverityColor(s) : '#e5e7eb',
-                                    background: filterSeverity === s ? getSeverityBg(s) : 'white',
-                                    color: filterSeverity === s ? getSeverityColor(s) : '#6b7280',
+                                    borderRadius: 12,
+                                    border: `1px solid ${!alert.isRead ? cfg.border : '#f3f4f6'}`,
+                                    borderLeft: `4px solid ${cfg.color}`,
+                                    padding: '16px 20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 16,
+                                    background: !alert.isRead ? `${cfg.bg}60` : 'white',
+                                    boxShadow: !alert.isRead
+                                        ? '0 2px 8px rgba(0,0,0,0.06)'
+                                        : '0 1px 3px rgba(0,0,0,0.04)',
+                                    transition: 'all 0.15s',
                                 }}
                             >
-                                {s === 'all' ? 'Toutes' : s === 'critical' ? 'Critique' : s === 'high' ? 'Élevé' : s === 'medium' ? 'Moyen' : 'Faible'}
-                            </button>
-                        ))}
-                    </div>
+                                {/* Icône métrique */}
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                                    background: cfg.bg, color: cfg.color,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                                }}>
+                                    <i className={metricIcon} />
+                                </div>
 
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                        <button
-                            onClick={() => { setFilterResolved(false); setPage(1); }}
-                            className={`btn btn-sm ${filterResolved === false ? 'btn-primary' : 'btn-ghost'}`}
-                        >
-                            Actives
-                        </button>
-                        <button
-                            onClick={() => { setFilterResolved(true); setPage(1); }}
-                            className={`btn btn-sm ${filterResolved === true ? 'btn-primary' : 'btn-ghost'}`}
-                        >
-                            Résolues
-                        </button>
-                        <button
-                            onClick={() => { setFilterResolved(undefined); setPage(1); }}
-                            className={`btn btn-sm ${filterResolved === undefined ? 'btn-primary' : 'btn-ghost'}`}
-                        >
-                            Toutes
-                        </button>
-                    </div>
-                </div>
-            </div>
+                                {/* Avatar */}
+                                <Avatar name={alert.patientName} size="sm" />
 
-            {/* ── Content ─────────────────────────────────────────── */}
-            <div className="card" style={{ padding: 0 }}>
-                {isError ? (
-                    <div style={{ padding: 24 }}>
-                        <ErrorMessage
-                            message={error instanceof Error ? error.message : 'Erreur de chargement'}
-                            onRetry={() => refetch()}
-                        />
-                    </div>
-                ) : isLoading ? (
-                    <LoadingSpinner text="Chargement des alertes..." />
-                ) : alerts.length === 0 ? (
-                    <EmptyState
-                        icon="fas fa-bell-slash"
-                        title="Aucune alerte"
-                        description={filterResolved === false ? 'Aucune alerte active' : 'Aucune alerte dans cette catégorie'}
-                    />
-                ) : (
-                    <>
-                        <div style={{ padding: '0 4px' }}>
-                            {alerts.map((alert) => (
-                                <div
-                                    key={alert.id}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 16,
-                                        padding: '20px 24px',
-                                        borderBottom: '1px solid #f9fafb',
-                                        background: !alert.isRead ? `${getSeverityBg(alert.severity)}40` : 'transparent',
-                                        transition: 'background 0.2s',
-                                    }}
-                                >
-                                    {/* Icon */}
-                                    <div
-                                        style={{
-                                            width: 48,
-                                            height: 48,
-                                            borderRadius: 12,
-                                            background: getSeverityBg(alert.severity),
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            flexShrink: 0,
-                                            color: getSeverityColor(alert.severity),
-                                            fontSize: 20,
-                                        }}
-                                    >
-                                        <i className={METRIC_ICONS[alert.type] ?? 'fas fa-exclamation-triangle'} />
+                                {/* Infos */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
+                                        <span style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>
+                                            {alert.patientName}
+                                        </span>
+                                        {!alert.isRead && (
+                                            <span style={{
+                                                width: 7, height: 7, borderRadius: '50%',
+                                                background: cfg.color, flexShrink: 0, display: 'inline-block',
+                                            }} />
+                                        )}
+                                        <span style={{
+                                            padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                                            background: cfg.bg, color: cfg.color, textTransform: 'uppercase',
+                                        }}>
+                                            {cfg.label}
+                                        </span>
                                     </div>
-
-                                    {/* Avatar */}
-                                    <Avatar name={alert.patientName} size="sm" />
-
-                                    {/* Info */}
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                            <p style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>
-                                                {alert.patientName}
-                                            </p>
-                                            {!alert.isRead && (
-                                                <span
-                                                    style={{
-                                                        width: 8,
-                                                        height: 8,
-                                                        borderRadius: '50%',
-                                                        background: '#2a6b8f',
-                                                        flexShrink: 0,
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-                                        <p style={{ fontSize: 13, color: '#374151', marginBottom: 4 }}>
-                                            {alert.message}
-                                        </p>
-                                        <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#9ca3af' }}>
-                      <span>
-                        <i className="fas fa-chart-line" style={{ marginRight: 4 }} />
-                          {METRIC_LABELS[alert.type] ?? alert.type}
-                      </span>
-                                            <span>
-                        <i className="fas fa-clock" style={{ marginRight: 4 }} />
-                                                {formatRelativeDate(alert.createdAt)}
-                      </span>
-                                            {alert.isResolved && (
-                                                <span style={{ color: '#059669' }}>
-                          <i className="fas fa-check-circle" style={{ marginRight: 4 }} />
-                          Résolue
-                        </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Badge + Actions */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                                        <AlertSeverityBadge severity={alert.severity} />
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                            {!alert.isRead && (
-                                                <button
-                                                    className="btn btn-sm btn-ghost"
-                                                    onClick={() => handleMarkRead(alert.id)}
-                                                    title="Marquer comme lu"
-                                                    disabled={markRead.isPending}
-                                                >
-                                                    <i className="fas fa-check" />
-                                                </button>
-                                            )}
-                                            {!alert.isResolved && (
-                                                <button
-                                                    className="btn btn-sm btn-secondary"
-                                                    onClick={() => handleResolve(alert.id)}
-                                                    disabled={resolveAlert.isPending}
-                                                    title="Résoudre l'alerte"
-                                                    style={{ fontSize: 12 }}
-                                                >
-                                                    <i className="fas fa-check-double" style={{ marginRight: 4 }} />
-                                                    Résoudre
-                                                </button>
-                                            )}
-                                        </div>
+                                    <p style={{ fontSize: 13, color: '#374151', marginBottom: 4 }}>
+                                        {alert.message}
+                                    </p>
+                                    <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#9ca3af', flexWrap: 'wrap' }}>
+                                        <span>
+                                            <i className="fas fa-chart-line" style={{ marginRight: 4 }} />
+                                            {metricLabel}
+                                        </span>
+                                        <span>
+                                            <i className="fas fa-clock" style={{ marginRight: 4 }} />
+                                            {formatDateTime(alert.createdAt)}
+                                        </span>
+                                        <span style={{ fontWeight: 600, color: cfg.color }}>
+                                            {alert.value} {alert.unit}
+                                            <span style={{ color: '#9ca3af', fontWeight: 400 }}>
+                                                {' '}· seuil {alert.threshold} {alert.unit}
+                                            </span>
+                                        </span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
 
-                        {/* Pagination */}
-                        <div style={{ padding: '0 24px' }}>
-                            <Pagination
-                                page={page}
-                                totalPages={totalPages}
-                                total={total}
-                                pageSize={10}
-                                onPageChange={setPage}
-                            />
-                        </div>
-                    </>
-                )}
-            </div>
+                                {/* Actions */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'flex-end' }}>
+                                    <button
+                                        onClick={() => navigate(`/patients/${alert.patientId}/follow-up`)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 6,
+                                            padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+                                            background: '#1a3c52', color: 'white',
+                                            border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        <i className="fas fa-user" style={{ fontSize: 11 }} />
+                                        Voir patient
+                                    </button>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        {!alert.isRead && (
+                                            <button
+                                                onClick={() => handleMarkRead(alert.id)}
+                                                disabled={markRead.isPending}
+                                                title="Marquer comme lu"
+                                                style={{
+                                                    padding: '5px 10px', borderRadius: 6, fontSize: 11,
+                                                    background: 'transparent', color: '#6b7280',
+                                                    border: '1px solid #e5e7eb', cursor: 'pointer',
+                                                }}
+                                            >
+                                                <i className="fas fa-check" />
+                                            </button>
+                                        )}
+                                        {!alert.isResolved && (
+                                            <button
+                                                onClick={() => handleResolve(alert.id)}
+                                                disabled={resolveAlert.isPending}
+                                                title="Résoudre"
+                                                style={{
+                                                    padding: '5px 10px', borderRadius: 6, fontSize: 11,
+                                                    background: '#d1fae5', color: '#065f46',
+                                                    border: '1px solid #a7f3d0', cursor: 'pointer',
+                                                }}
+                                            >
+                                                <i className="fas fa-check-double" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* ── Footer ──────────────────────────────────────── */}
+            {!isLoading && !isError && weekAlerts.length > 0 && (
+                <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 20 }}>
+                    {weekAlerts.length} alerte{weekAlerts.length > 1 ? 's' : ''} cette semaine
+                    {' · '}{unread} non lue{unread > 1 ? 's' : ''}
+                    {filterSeverity !== 'all' && ` · filtre : ${SEV_CONFIG[filterSeverity].label}`}
+                </p>
+            )}
         </div>
     );
 };
-
-// ─── Helpers ─────────────────────────────────────────────────
-function getSeverityColor(s: string): string {
-    const map: Record<string, string> = {
-        critical: '#dc2626',
-        high: '#ea580c',
-        medium: '#ca8a04',
-        low: '#16a34a',
-        all: '#2a6b8f',
-    };
-    return map[s] ?? '#6b7280';
-}
-
-function getSeverityBg(s: string): string {
-    const map: Record<string, string> = {
-        critical: '#fee2e2',
-        high: '#ffedd5',
-        medium: '#fef9c3',
-        low: '#dcfce7',
-        all: '#dbeafe',
-    };
-    return map[s] ?? '#f3f4f6';
-}
 
 export default AlertsPage;
