@@ -1,9 +1,9 @@
 import React from 'react';
-import {Patient} from "@/data/models/patient.model.ts";
-import {calculateAge, formatRelativeDate} from "@core/utils";
-import {Avatar} from "@shared/components/ui/Avatar.tsx";
-import {PatientStatusBadge} from "@shared/components/ui/StatusBadge.tsx";
-
+import { Patient } from "@/data/models/patient.model.ts";
+import { calculateAge, formatRelativeDate } from "@core/utils";
+import { Avatar } from "@shared/components/ui/Avatar.tsx";
+import { PatientStatusBadge } from "@shared/components/ui/StatusBadge.tsx";
+import { useAuthStore } from "@/store/auth.store.ts";
 
 interface PatientTableProps {
     patients: Patient[];
@@ -20,6 +20,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
                                                        onValidate,
                                                        onSuspend,
                                                    }) => {
+    const { user } = useAuthStore();
+    const isDoctor = user?.role === 'doctor';
+
     if (isLoading) {
         return (
             <div style={{ padding: 20 }}>
@@ -83,8 +86,8 @@ const PatientTable: React.FC<PatientTableProps> = ({
                                             padding: '2px 8px', background: '#eff6ff', color: '#1d4ed8',
                                             borderRadius: 10, fontSize: 11, fontWeight: 500,
                                         }}>
-                        {c}
-                      </span>
+                                                {c}
+                                            </span>
                                     ))}
                                     {p.conditions.length > 2 && (
                                         <span style={{ fontSize: 11, color: '#9ca3af' }}>+{p.conditions.length - 2}</span>
@@ -112,7 +115,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
                                     >
                                         <i className="fas fa-eye"></i>
                                     </button>
-                                    {p.status === 'pending' && (
+
+                                    {/* Valider : uniquement pour manager et admin */}
+                                    {!isDoctor && p.status === 'pending' && (
                                         <button
                                             className="btn btn-sm btn-secondary"
                                             onClick={() => onValidate?.(p)}
@@ -122,11 +127,13 @@ const PatientTable: React.FC<PatientTableProps> = ({
                                             <i className="fas fa-check"></i>
                                         </button>
                                     )}
+
+                                    {/* Suspendre : disponible pour tous les rôles sur les patients actifs */}
                                     {p.status === 'active' && (
                                         <button
                                             className="btn btn-sm"
                                             onClick={() => onSuspend?.(p)}
-                                            title="Suspendre"
+                                            title="Suspendre / Révoquer"
                                             style={{ background: 'transparent', color: '#ef4444', border: '1px solid #fecaca', fontSize: 12, padding: '6px 10px' }}
                                         >
                                             <i className="fas fa-ban"></i>

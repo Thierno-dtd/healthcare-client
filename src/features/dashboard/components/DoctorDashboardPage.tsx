@@ -8,41 +8,63 @@ import { useAuthStore } from "@/store/auth.store";
 import { useSendMessageToPatient } from "@/hook/useDoctorFeatures";
 import { formatRelativeTime } from "@/core/utils";
 import toast from "react-hot-toast";
-import {PatientCompliance} from "@/data/models/patientCompliance.model.ts";
+import { PatientCompliance } from "@/data/models/patientCompliance.model.ts";
+import { MOCK_ALERTS, MOCK_PATIENTS, MOCK_FREQUENCIES, MOCK_MEDICATION_INTAKES } from "@/data/mocks/mock-data";
+import { useDoctorPatientCompliance } from "@/hook/useDoctorFeatures";
 
 type Period = "week" | "2weeks" | "month";
 type DiseaseFilter = "all" | "hypertension" | "diabetes" | "both";
 
-// ─── Rich mock data ────────────────────────────────────────────
-const MOCK_COMPLIANCE: PatientCompliance[] = [
-    { patientId: "p1",  patientName: "Afi Bima",          patientType: "hypertension", weekCompliance: 100, medicationAdherence: 95, status: "compliant",     missedMeasurements: 0, totalRequired: 5, lastActivity: new Date(Date.now() - 2*3600000).toISOString(),  criticalAlerts: 0 },
-    { patientId: "p2",  patientName: "Emmanuel Koffi",     patientType: "both",         weekCompliance: 60,  medicationAdherence: 70, status: "partial",       missedMeasurements: 2, totalRequired: 5, lastActivity: new Date(Date.now() - 6*3600000).toISOString(),  criticalAlerts: 2 },
-    { patientId: "p3",  patientName: "Akua Mensah",        patientType: "diabetes",     weekCompliance: 20,  medicationAdherence: 45, status: "non_compliant", missedMeasurements: 4, totalRequired: 5, lastActivity: new Date(Date.now() - 2*86400000).toISOString(), criticalAlerts: 1 },
-    { patientId: "p4",  patientName: "Kofi Adjei",         patientType: "hypertension", weekCompliance: 100, medicationAdherence: 92, status: "compliant",     missedMeasurements: 0, totalRequired: 4, lastActivity: new Date(Date.now() - 1*3600000).toISOString(),  criticalAlerts: 0 },
-    { patientId: "p5",  patientName: "Kofi Asante",        patientType: "both",         weekCompliance: 100, medicationAdherence: 88, status: "compliant",     missedMeasurements: 0, totalRequired: 5, lastActivity: new Date(Date.now() - 30*60000).toISOString(),   criticalAlerts: 0 },
-    { patientId: "p6",  patientName: "Nana Osei",          patientType: "diabetes",     weekCompliance: 60,  medicationAdherence: 65, status: "partial",       missedMeasurements: 2, totalRequired: 5, lastActivity: new Date(Date.now() - 5*3600000).toISOString(),  criticalAlerts: 0 },
-    { patientId: "p7",  patientName: "Abena Darko",        patientType: "hypertension", weekCompliance: 80,  medicationAdherence: 85, status: "compliant",     missedMeasurements: 1, totalRequired: 5, lastActivity: new Date(Date.now() - 3*3600000).toISOString(),  criticalAlerts: 0 },
-    { patientId: "p8",  patientName: "Kwame Boateng",      patientType: "both",         weekCompliance: 0,   medicationAdherence: 30, status: "non_compliant", missedMeasurements: 5, totalRequired: 5, lastActivity: new Date(Date.now() - 4*86400000).toISOString(), criticalAlerts: 1 },
-    { patientId: "p9",  patientName: "Yaa Asantewaa",      patientType: "diabetes",     weekCompliance: 40,  medicationAdherence: 55, status: "partial",       missedMeasurements: 3, totalRequired: 5, lastActivity: new Date(Date.now() - 1*86400000).toISOString(), criticalAlerts: 0 },
-    { patientId: "p10", patientName: "Kwabena Mensah",     patientType: "hypertension", weekCompliance: 100, medicationAdherence: 98, status: "compliant",     missedMeasurements: 0, totalRequired: 3, lastActivity: new Date(Date.now() - 45*60000).toISOString(),  criticalAlerts: 0 },
-];
+// ─── Build compliance from mock data ──────────────────────────
+function buildComplianceFromMock(doctorId: string = "d_001"): PatientCompliance[] {
+    const currentWeek = getISOWeek(new Date());
+    const doctorPatients = MOCK_PATIENTS.filter(p => p.doctorId === doctorId && p.status === "active");
 
-const MOCK_ALERTS = [
-    { id: "a1",  patientId: "p2",  patientName: "Emmanuel Koffi",  patientType: "both",         severity: "critical" as const, isRead: false, createdAt: new Date(Date.now() - 2*86400000).toISOString(), message: "Glycémie à 1.45 g/L — seuil critique dépassé" },
-    { id: "a2",  patientId: "p2",  patientName: "Emmanuel Koffi",  patientType: "both",         severity: "critical" as const, isRead: false, createdAt: new Date(Date.now() - 4*86400000).toISOString(), message: "Tension à 160/98 mmHg — hypertension sévère" },
-    { id: "a3",  patientId: "p3",  patientName: "Akua Mensah",     patientType: "diabetes",     severity: "high"    as const, isRead: false, createdAt: new Date(Date.now() - 1*86400000).toISOString(), message: "4 jours sans mesure — fréquence non respectée (5/sem. requise)" },
-    { id: "a4",  patientId: "p8",  patientName: "Kwame Boateng",   patientType: "both",         severity: "critical" as const, isRead: true,  createdAt: new Date(Date.now() - 5*86400000).toISOString(), message: "Tension artérielle critique : 185/110 mmHg" },
-    { id: "a5",  patientId: "p6",  patientName: "Nana Osei",       patientType: "diabetes",     severity: "high"    as const, isRead: false, createdAt: new Date(Date.now() - 3*3600000).toISOString(),  message: "Glycémie élevée : 8.8 mmol/L (seuil : 7.0)" },
-    { id: "a6",  patientId: "p9",  patientName: "Yaa Asantewaa",   patientType: "diabetes",     severity: "high"    as const, isRead: true,  createdAt: new Date(Date.now() - 1*86400000).toISOString(), message: "3 mesures manquées cette semaine" },
-    { id: "a7",  patientId: "p2",  patientName: "Emmanuel Koffi",  patientType: "both",         severity: "high"    as const, isRead: false, createdAt: new Date(Date.now() - 6*3600000).toISOString(),  message: "Fréquence cardiaque élevée : 108 bpm" },
-    { id: "a8",  patientId: "p4",  patientName: "Kofi Adjei",      patientType: "hypertension", severity: "high"    as const, isRead: true,  createdAt: new Date(Date.now() - 2*3600000).toISOString(),  message: "Tension légèrement élevée : 145/90 mmHg" },
-    { id: "a9",  patientId: "p8",  patientName: "Kwame Boateng",   patientType: "both",         severity: "critical" as const, isRead: false, createdAt: new Date(Date.now() - 7*3600000).toISOString(),  message: "Adhérence médicamenteuse < 30% cette semaine" },
-    { id: "a10", patientId: "p3",  patientName: "Akua Mensah",     patientType: "diabetes",     severity: "high"    as const, isRead: true,  createdAt: new Date(Date.now() - 8*3600000).toISOString(),  message: "Glycémie à 9.2 mmol/L — surveillance recommandée" },
-];
+    return doctorPatients.map(patient => {
+        const freq = MOCK_FREQUENCIES.find(f => f.patientId === patient.id);
+        const required = freq?.timesPerWeek ?? 3;
+        const weekCompliance = Math.min(100, Math.round((required / required) * 100)); // placeholder, real calc below
 
-const AGE_MAP: Record<string, number> = {
-    p1: 41, p2: 55, p3: 33, p4: 67, p5: 48, p6: 60, p7: 38, p8: 52, p9: 29, p10: 44,
-};
+        const intakes = MOCK_MEDICATION_INTAKES.filter(i => i.patientId === patient.id);
+        const taken = intakes.filter(i => !i.missed).length;
+        const medicationAdherence = intakes.length ? Math.round((taken / intakes.length) * 100) : 100;
+
+        // Determine patientType from conditions
+        const hasHypertension = patient.conditions.some(c => c.toLowerCase().includes("hypertension") || c.toLowerCase().includes("tension"));
+        const hasDiabetes = patient.conditions.some(c => c.toLowerCase().includes("diabète") || c.toLowerCase().includes("diabet"));
+        const patientType: "hypertension" | "diabetes" | "both" = hasHypertension && hasDiabetes ? "both" : hasHypertension ? "hypertension" : "diabetes";
+
+        // Week compliance from alerts/activity
+        const criticalAlerts = MOCK_ALERTS.filter(a => a.patientId === patient.id && !a.isResolved && a.severity === "critical").length;
+        const missed = 0; // from measurements - simplified
+        const wc = criticalAlerts > 0 ? 60 : medicationAdherence;
+
+        let status: PatientCompliance["status"] = "compliant";
+        if (criticalAlerts > 0) status = "critical";
+        else if (wc < 50) status = "non_compliant";
+        else if (wc < 80) status = "partial";
+
+        return {
+            patientId: patient.id,
+            patientName: patient.name,
+            patientType,
+            weekCompliance: wc,
+            medicationAdherence,
+            status,
+            missedMeasurements: missed,
+            totalRequired: required,
+            lastActivity: patient.lastActivity,
+            criticalAlerts,
+        } as PatientCompliance;
+    });
+}
+
+function getISOWeek(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
 
 // ─── Helpers ───────────────────────────────────────────────────
 function getStats(compliance: PatientCompliance[]) {
@@ -124,7 +146,6 @@ const TypeBadge = ({ type }: { type: string }) => {
     return <span style={{ padding: "1px 10px", borderRadius: 9999, fontSize: 10, fontWeight: 700, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>;
 };
 
-// ─── SCROLL AREA — styled scrollbar ────────────────────────────
 const SCROLL_HEIGHT = 420;
 const scrollAreaStyle: React.CSSProperties = {
     maxHeight: SCROLL_HEIGHT,
@@ -142,51 +163,70 @@ const DoctorDashboardPage = () => {
     const [msgPatient, setMsgPatient] = useState<string | null>(null);
     const [msgText, setMsgText]       = useState("");
 
-    // Alerts filters
     const [alertSearch, setAlertSearch]     = useState("");
     const [alertDisease, setAlertDisease]   = useState<DiseaseFilter>("all");
-
-    // Patient search
     const [patientSearch, setPatientSearch] = useState("");
+
+    // ── Data from mock ──────────────────────────────────────────
+    const MOCK_COMPLIANCE = useMemo(() => buildComplianceFromMock("d_001"), []);
+
+    // Build alerts from mock - filter for doctor d_001 patients
+    const doctorPatientIds = useMemo(() =>
+            MOCK_PATIENTS.filter(p => p.doctorId === "d_001").map(p => p.id),
+        []);
+
+    const MOCK_ALERTS_DOCTOR = useMemo(() =>
+            MOCK_ALERTS
+                .filter(a => doctorPatientIds.includes(a.patientId) && !a.isResolved)
+                .map(a => ({
+                    id: a.id,
+                    patientId: a.patientId,
+                    patientName: a.patientName,
+                    patientType: (MOCK_COMPLIANCE.find(c => c.patientId === a.patientId)?.patientType ?? "hypertension") as "hypertension" | "diabetes" | "both",
+                    severity: a.severity as "critical" | "high",
+                    isRead: a.isRead,
+                    createdAt: a.createdAt,
+                    message: a.message,
+                })),
+        [doctorPatientIds, MOCK_COMPLIANCE]);
+
+    // Weekly bar chart data (simulated from mock measurements)
+    const weeklyData = [
+        { day: "Lun", mesures: 4, attendues: 5 },
+        { day: "Mar", mesures: 3, attendues: 5 },
+        { day: "Mer", mesures: 5, attendues: 5 },
+        { day: "Jeu", mesures: 2, attendues: 5 },
+        { day: "Ven", mesures: 4, attendues: 5 },
+        { day: "Sam", mesures: 1, attendues: 5 },
+        { day: "Dim", mesures: 2, attendues: 5 },
+    ];
 
     const stats = getStats(MOCK_COMPLIANCE);
     const adh   = avgAdh(MOCK_COMPLIANCE);
-    const unread = MOCK_ALERTS.filter(a => !a.isRead);
+    const unread = MOCK_ALERTS_DOCTOR.filter(a => !a.isRead);
 
-    // Filtered alerts
     const filteredAlerts = useMemo(() => {
-        return MOCK_ALERTS.filter(a => {
+        return MOCK_ALERTS_DOCTOR.filter(a => {
             const matchSearch  = alertSearch === "" ||
                 a.patientName.toLowerCase().includes(alertSearch.toLowerCase()) ||
                 a.message.toLowerCase().includes(alertSearch.toLowerCase());
             const matchDisease = alertDisease === "all" || a.patientType === alertDisease;
             return matchSearch && matchDisease;
         });
-    }, [alertSearch, alertDisease]);
+    }, [alertSearch, alertDisease, MOCK_ALERTS_DOCTOR]);
 
-    // Filtered patients
     const filteredPatients = useMemo(() => {
         if (!patientSearch) return MOCK_COMPLIANCE;
         return MOCK_COMPLIANCE.filter(p =>
             p.patientName.toLowerCase().includes(patientSearch.toLowerCase())
         );
-    }, [patientSearch]);
+    }, [patientSearch, MOCK_COMPLIANCE]);
 
     const pieData = [
         { name: "Conformes",     value: stats.compliant,    color: "hsl(152,55%,42%)" },
         { name: "Partiels",      value: stats.partial,      color: "hsl(30,90%,55%)"  },
         { name: "Non conformes", value: stats.nonCompliant, color: "hsl(0,72%,51%)"   },
     ].filter(d => d.value > 0);
-
-    const weeklyData = [
-        { day: "Lun", mesures: 32, attendues: 40 },
-        { day: "Mar", mesures: 28, attendues: 40 },
-        { day: "Mer", mesures: 35, attendues: 40 },
-        { day: "Jeu", mesures: 22, attendues: 40 },
-        { day: "Ven", mesures: 38, attendues: 40 },
-        { day: "Sam", mesures: 15, attendues: 40 },
-        { day: "Dim", mesures: 18, attendues: 40 },
-    ];
 
     const periodLabel = { week: "cette semaine", "2weeks": "les 2 dernières semaines", month: "ce mois" }[period];
 
@@ -209,7 +249,9 @@ const DoctorDashboardPage = () => {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
                     <div>
                         <h2 style={{ fontSize: 24, fontWeight: 700, color: C.white, margin: 0, marginBottom: 6 }}>Tableau de bord analytique</h2>
-                        <p style={{ opacity: 0.9, fontSize: 14, margin: 0 }}>Bienvenue Dr. {user?.name?.split(" ").slice(-1)[0] ?? "Martin Dupont"} — Suivi hebdomadaire de vos patients</p>
+                        <p style={{ opacity: 0.9, fontSize: 14, margin: 0 }}>
+                            Bienvenue Dr. {user?.name?.split(" ").slice(-1)[0] ?? "Dupont"} — Suivi de vos {stats.total} patients actifs
+                        </p>
                     </div>
                     <div style={{ display: "flex", background: "rgba(255,255,255,0.12)", borderRadius: 10, padding: 4, gap: 2 }}>
                         {([ ["week","Semaine"], ["2weeks","2 Sem."], ["month","Mois"] ] as [Period,string][]).map(([k,l]) => (
@@ -245,7 +287,7 @@ const DoctorDashboardPage = () => {
                 </div>
                 <div style={{ ...card, padding: 24, animation: "fadeUp 0.4s ease both 0.25s" }}>
                     <h3 style={{ fontSize: 15, fontWeight: 600, color: C.textMain, margin: 0, marginBottom: 4 }}>Conformité des patients</h3>
-                    <p style={{ fontSize: 12, color: C.textMuted, marginBottom: 16 }}>Adhérence médicamenteuse : {adh}%</p>
+                    <p style={{ fontSize: 12, color: C.textMuted, marginBottom: 16 }}>Adhérence médicamenteuse moyenne : {adh}%</p>
                     <ResponsiveContainer width="100%" height={220}>
                         <PieChart>
                             <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value">
@@ -258,49 +300,38 @@ const DoctorDashboardPage = () => {
                 </div>
             </div>
 
-            {/* ── ALERTS + PATIENTS — scroll sur les deux ────── */}
+            {/* ── ALERTS + PATIENTS ───────────────────────────── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, alignItems: "start" }}>
 
                 {/* ── ALERTES ── */}
                 <div style={{ ...card, padding: 0, animation: "fadeUp 0.4s ease both 0.3s", display: "flex", flexDirection: "column" }}>
-
-                    {/* Header */}
                     <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                         <h3 style={{ fontSize: 14, fontWeight: 600, color: C.textMain, display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
                             <span style={{ color: C.red }}><IBell /></span>
                             Alertes récentes
                         </h3>
                         <span style={{ padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontWeight: 700, background: "hsl(0,72%,94%)", color: "hsl(0,72%,35%)" }}>
-              {unread.length} non lues
-            </span>
+                            {unread.length} non lues
+                        </span>
                     </div>
 
-                    {/* Search + filter toolbar */}
+                    {/* Search + filter */}
                     <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
-                        {/* Search input */}
                         <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.textMuted, display: "flex", alignItems: "center" }}>
-                <ISearch />
-              </span>
+                            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.textMuted, display: "flex", alignItems: "center" }}>
+                                <ISearch />
+                            </span>
                             <input
                                 type="text"
                                 placeholder="Rechercher une alerte..."
                                 value={alertSearch}
                                 onChange={e => setAlertSearch(e.target.value)}
-                                style={{
-                                    width: "100%", padding: "7px 10px 7px 30px",
-                                    fontSize: 12, border: `1px solid ${C.border}`, borderRadius: 8,
-                                    background: C.muted, color: C.textMain, outline: "none", boxSizing: "border-box",
-                                }}
+                                style={{ width: "100%", padding: "7px 10px 7px 30px", fontSize: 12, border: `1px solid ${C.border}`, borderRadius: 8, background: C.muted, color: C.textMain, outline: "none", boxSizing: "border-box" }}
                             />
                         </div>
-                        {/* Disease filter chips */}
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                             {([
-                                ["all",          "Toutes"         ],
-                                ["hypertension", "HTA"            ],
-                                ["diabetes",     "Diabète"        ],
-                                ["both",         "HTA + Diabète"  ],
+                                ["all", "Toutes"], ["hypertension", "HTA"], ["diabetes", "Diabète"], ["both", "HTA + Diabète"],
                             ] as [DiseaseFilter, string][]).map(([k, l]) => (
                                 <button key={k} onClick={() => setAlertDisease(k)} style={{
                                     padding: "3px 10px", borderRadius: 9999, fontSize: 11, fontWeight: 600,
@@ -314,7 +345,6 @@ const DoctorDashboardPage = () => {
                         </div>
                     </div>
 
-                    {/* Scrollable list */}
                     <div className="dd-scroll" style={{ ...scrollAreaStyle }}>
                         {filteredAlerts.length === 0 && (
                             <p style={{ padding: 24, color: C.textMuted, fontSize: 13, textAlign: "center" }}>Aucune alerte trouvée</p>
@@ -325,13 +355,13 @@ const DoctorDashboardPage = () => {
                                 background: !alert.isRead ? "hsl(0,72%,98%)" : "transparent",
                             }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{
-                      padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontWeight: 600,
-                      background: alert.severity === "critical" ? "hsl(0,72%,94%)" : "hsl(30,90%,92%)",
-                      color:      alert.severity === "critical" ? "hsl(0,72%,35%)" : "hsl(30,90%,30%)",
-                  }}>
-                    {alert.severity === "critical" ? "Critique" : "Attention"}
-                  </span>
+                                    <span style={{
+                                        padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontWeight: 600,
+                                        background: alert.severity === "critical" ? "hsl(0,72%,94%)" : "hsl(30,90%,92%)",
+                                        color:      alert.severity === "critical" ? "hsl(0,72%,35%)" : "hsl(30,90%,30%)",
+                                    }}>
+                                        {alert.severity === "critical" ? "Critique" : "Attention"}
+                                    </span>
                                     <span style={{ fontSize: 11, color: C.textMuted }}>{formatRelativeTime(alert.createdAt)}</span>
                                     {!alert.isRead && <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.red, flexShrink: 0 }} />}
                                 </div>
@@ -344,39 +374,31 @@ const DoctorDashboardPage = () => {
 
                 {/* ── PATIENTS ── */}
                 <div style={{ ...card, padding: 0, animation: "fadeUp 0.4s ease both 0.35s", display: "flex", flexDirection: "column" }}>
-
-                    {/* Header */}
                     <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                         <h3 style={{ fontSize: 14, fontWeight: 600, color: C.textMain, display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
                             <span style={{ color: C.primary }}><IUsers /></span>
-                            Patients suivis
+                            Patients suivis ({stats.total})
                         </h3>
                         <button onClick={() => navigate("/patients")} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: C.primary, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
                             Voir tout <IArrow />
                         </button>
                     </div>
 
-                    {/* Patient search */}
                     <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
                         <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.textMuted, display: "flex", alignItems: "center" }}>
-                <ISearch />
-              </span>
+                            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.textMuted, display: "flex", alignItems: "center" }}>
+                                <ISearch />
+                            </span>
                             <input
                                 type="text"
                                 placeholder="Rechercher un patient..."
                                 value={patientSearch}
                                 onChange={e => setPatientSearch(e.target.value)}
-                                style={{
-                                    width: "100%", padding: "7px 10px 7px 30px",
-                                    fontSize: 12, border: `1px solid ${C.border}`, borderRadius: 8,
-                                    background: C.muted, color: C.textMain, outline: "none", boxSizing: "border-box",
-                                }}
+                                style={{ width: "100%", padding: "7px 10px 7px 30px", fontSize: 12, border: `1px solid ${C.border}`, borderRadius: 8, background: C.muted, color: C.textMain, outline: "none", boxSizing: "border-box" }}
                             />
                         </div>
                     </div>
 
-                    {/* Scrollable list */}
                     <div className="dd-scroll" style={{ ...scrollAreaStyle }}>
                         {filteredPatients.length === 0 && (
                             <p style={{ padding: 24, color: C.textMuted, fontSize: 13, textAlign: "center" }}>Aucun patient trouvé</p>
@@ -389,7 +411,6 @@ const DoctorDashboardPage = () => {
                                  onMouseEnter={e => (e.currentTarget.style.background = C.muted)}
                                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                             >
-                                {/* Avatar + info */}
                                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                     <div style={{
                                         width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
@@ -397,17 +418,20 @@ const DoctorDashboardPage = () => {
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         fontSize: 12, fontWeight: 700,
                                     }}>
-                                        {p.patientName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                                        {p.patientName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
                                     </div>
                                     <div>
                                         <p style={{ fontSize: 13, fontWeight: 600, color: C.textMain, margin: "0 0 4px" }}>{p.patientName}</p>
                                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                            <span style={{ fontSize: 12, color: C.textMuted }}>{AGE_MAP[p.patientId] ?? "—"} ans</span>
                                             <TypeBadge type={p.patientType} />
+                                            {p.criticalAlerts > 0 && (
+                                                <span style={{ fontSize: 10, color: C.red, background: "hsl(0,72%,94%)", padding: "1px 6px", borderRadius: 4, fontWeight: 700 }}>
+                                                    {p.criticalAlerts} alerte{p.criticalAlerts > 1 ? "s" : ""}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                                {/* Right */}
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                     <ComplianceBadge status={p.status} />
                                     <Link to={`/patients/${p.patientId}/follow-up`} style={{ fontSize: 12, color: C.primary, fontWeight: 600, textDecoration: "none" }}>
@@ -434,7 +458,7 @@ const DoctorDashboardPage = () => {
                 {[
                     { icon: <IUsers />, title: "Demandes de patients",  desc: "Validez ou rejetez les nouvelles demandes de suivi.",              link: "/patient-requests" },
                     { icon: <ISteth />, title: "Nouvelle consultation", desc: "Créez une nouvelle consultation et remplissez la fiche médecin.",  link: "/patients"         },
-                    { icon: <IActiv />, title: "Suivi des patients",    desc: "Consultez les mesures quotidiennes et les prises de médicaments.", link: "/patients"         },
+                    { icon: <IActiv />, title: "Suivi des patients",    desc: "Consultez les mesures quotidiennes et les prises de médicaments.", link: "/monitoring"       },
                 ].map((a, i) => (
                     <button key={a.title} onClick={() => navigate(a.link)} style={{
                         ...card, padding: 20, textAlign: "left", cursor: "pointer", width: "100%",
@@ -453,8 +477,8 @@ const DoctorDashboardPage = () => {
                         </div>
                         <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 16, lineHeight: 1.55, flex: 1 }}>{a.desc}</p>
                         <span style={{ fontSize: 13, color: C.primary, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
-              Accéder <IArrow />
-            </span>
+                            Accéder <IArrow />
+                        </span>
                     </button>
                 ))}
             </div>
@@ -480,17 +504,14 @@ const DoctorDashboardPage = () => {
                 </div>
             )}
 
-            {/* Keyframes + custom scrollbar */}
             <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes zoomIn { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
-
-        /* Scrollbar styling — visible, thin, colored */
-        .dd-scroll::-webkit-scrollbar { width: 6px; }
-        .dd-scroll::-webkit-scrollbar-track { background: hsl(214,32%,96%); border-radius: 3px; }
-        .dd-scroll::-webkit-scrollbar-thumb { background: hsl(207,35%,72%); border-radius: 3px; }
-        .dd-scroll::-webkit-scrollbar-thumb:hover { background: hsl(207,55%,50%); }
-      `}</style>
+                @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+                @keyframes zoomIn { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
+                .dd-scroll::-webkit-scrollbar { width: 6px; }
+                .dd-scroll::-webkit-scrollbar-track { background: hsl(214,32%,96%); border-radius: 3px; }
+                .dd-scroll::-webkit-scrollbar-thumb { background: hsl(207,35%,72%); border-radius: 3px; }
+                .dd-scroll::-webkit-scrollbar-thumb:hover { background: hsl(207,55%,50%); }
+            `}</style>
         </div>
     );
 };

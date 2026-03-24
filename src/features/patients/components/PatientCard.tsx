@@ -1,8 +1,9 @@
 import React from 'react';
-import {Patient} from "@/data/models/patient.model.ts";
-import {calculateAge, formatRelativeDate} from "@core/utils";
-import {Avatar} from "@shared/components/ui/Avatar.tsx";
-import {PatientStatusBadge} from "@shared/components/ui/StatusBadge.tsx";
+import { Patient } from "@/data/models/patient.model.ts";
+import { calculateAge, formatRelativeDate } from "@core/utils";
+import { Avatar } from "@shared/components/ui/Avatar.tsx";
+import { PatientStatusBadge } from "@shared/components/ui/StatusBadge.tsx";
+import { useAuthStore } from "@/store/auth.store.ts";
 
 interface PatientCardProps {
     patient: Patient;
@@ -17,6 +18,8 @@ const PatientCard: React.FC<PatientCardProps> = ({
                                                      onValidate,
                                                      onSuspend,
                                                  }) => {
+    const { user } = useAuthStore();
+    const isDoctor = user?.role === 'doctor';
     const age = calculateAge(patient.dateOfBirth);
 
     return (
@@ -47,8 +50,8 @@ const PatientCard: React.FC<PatientCardProps> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151' }}>
                         <i className="fas fa-envelope" style={{ color: '#9ca3af', width: 16 }}></i>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {patient.email}
-            </span>
+                            {patient.email}
+                        </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151' }}>
                         <i className="fas fa-phone" style={{ color: '#9ca3af', width: 16 }}></i>
@@ -68,8 +71,8 @@ const PatientCard: React.FC<PatientCardProps> = ({
                                     padding: '3px 10px', background: '#eff6ff', color: '#1d4ed8',
                                     borderRadius: 12, fontSize: 12, fontWeight: 500,
                                 }}>
-                  {c}
-                </span>
+                                    {c}
+                                </span>
                             ))}
                         </div>
                     </div>
@@ -96,7 +99,8 @@ const PatientCard: React.FC<PatientCardProps> = ({
                     <i className="fas fa-eye"></i> Voir
                 </button>
 
-                {patient.status === 'pending' && (
+                {/* Valider : uniquement pour manager et admin */}
+                {!isDoctor && patient.status === 'pending' && (
                     <button
                         className="btn btn-sm btn-secondary"
                         onClick={() => onValidate?.(patient)}
@@ -105,11 +109,13 @@ const PatientCard: React.FC<PatientCardProps> = ({
                     </button>
                 )}
 
+                {/* Suspendre / Révoquer : tous rôles, patients actifs uniquement */}
                 {patient.status === 'active' && (
                     <button
                         className="btn btn-sm btn-danger"
                         onClick={() => onSuspend?.(patient)}
                         style={{ background: 'transparent', color: '#ef4444', border: '1px solid #fecaca' }}
+                        title="Suspendre / Révoquer"
                     >
                         <i className="fas fa-ban"></i>
                     </button>

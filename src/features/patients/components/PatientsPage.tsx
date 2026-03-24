@@ -2,23 +2,20 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-
 // Feature components
 import PatientCard from '../../../features/patients/components/PatientCard';
 
 // Shared components
-
-import {useAuthStore} from "@/store/auth.store.ts";
-import {usePatients, usePatientStats, useUpdatePatientStatus} from "@/hook/usePatients.ts";
-import {Patient, PatientStatus} from "@/data/models/patient.model.ts";
-import {StatCard} from "@shared/components/ui/StatCard.tsx";
-import {LoadingSpinner} from "@shared/components/ui/LoadingSpinner.tsx";
-import {EmptyState} from "@shared/components/ui/EmptyState.tsx";
-import {ErrorMessage} from "@shared/components/ui/ErrorMessage.tsx";
-import {Pagination} from "@shared/components/ui/Pagination.tsx";
+import { useAuthStore } from "@/store/auth.store.ts";
+import { usePatients, usePatientStats, useUpdatePatientStatus } from "@/hook/usePatients.ts";
+import { Patient, PatientStatus } from "@/data/models/patient.model.ts";
+import { StatCard } from "@shared/components/ui/StatCard.tsx";
+import { LoadingSpinner } from "@shared/components/ui/LoadingSpinner.tsx";
+import { EmptyState } from "@shared/components/ui/EmptyState.tsx";
+import { ErrorMessage } from "@shared/components/ui/ErrorMessage.tsx";
+import { Pagination } from "@shared/components/ui/Pagination.tsx";
 import PatientTable from "@features/patients/components/PatientTable.tsx";
 
-// ─── View mode toggle ─────────────────────────────────────────
 type ViewMode = 'table' | 'grid';
 
 const PatientsPage: React.FC = () => {
@@ -26,7 +23,6 @@ const PatientsPage: React.FC = () => {
     const { user } = useAuthStore();
     const [viewMode, setViewMode] = useState<ViewMode>('table');
 
-    // ── Data via hooks ──────────────────────────────────────────
     const {
         data: paginatedPatients,
         isLoading,
@@ -38,7 +34,6 @@ const PatientsPage: React.FC = () => {
         setStatus,
         setPage,
     } = usePatients({
-        doctorId: user?.role === 'doctor' ? undefined : undefined, // Doctor sees their patients
         pageSize: 10,
     });
 
@@ -49,8 +44,10 @@ const PatientsPage: React.FC = () => {
     const updateStatus = useUpdatePatientStatus();
 
     // ── Handlers ────────────────────────────────────────────────
+
+    // Tous les rôles → redirige vers la fiche unifiée /follow-up
     const handleView = useCallback((patient: Patient) => {
-        navigate(`/patients/${patient.id}`);
+        navigate(`/patients/${patient.id}/follow-up`);
     }, [navigate]);
 
     const handleValidate = useCallback(async (patient: Patient) => {
@@ -63,7 +60,7 @@ const PatientsPage: React.FC = () => {
     }, [updateStatus]);
 
     const handleSuspend = useCallback(async (patient: Patient) => {
-        if (!confirm(`Suspendre le compte de ${patient.name} ?`)) return;
+        if (!confirm(`Suspendre / révoquer le compte de ${patient.name} ?`)) return;
         try {
             await updateStatus.mutateAsync({ id: patient.id, status: 'suspended' });
             toast.success(`Compte de ${patient.name} suspendu`);
@@ -82,10 +79,12 @@ const PatientsPage: React.FC = () => {
             {/* ── Page header ──────────────────────────────────────── */}
             <div style={{ marginBottom: 28 }}>
                 <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
-                    Gestion des patients
+                    {user?.role === 'doctor' ? 'Mes patients' : 'Gestion des patients'}
                 </h1>
                 <p style={{ color: '#6b7280', fontSize: 15 }}>
-                    Suivez et gérez vos patients en temps réel
+                    {user?.role === 'doctor'
+                        ? 'Consultez les dossiers et suivez vos patients'
+                        : 'Suivez et gérez vos patients en temps réel'}
                 </p>
             </div>
 
@@ -160,7 +159,7 @@ const PatientsPage: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Add patient (admin/manager) */}
+                    {/* Add patient (admin/manager only) */}
                     {user?.role !== 'doctor' && (
                         <button className="btn btn-primary btn-sm" onClick={() => navigate('/patients/new')}>
                             <i className="fas fa-plus"></i> Ajouter

@@ -14,13 +14,13 @@ const DoctorDashboardPage     = lazy(() => import('@features/dashboard/component
 
 // Patients
 const PatientsPage            = lazy(() => import('@features/patients/components/PatientsPage'));
-const PatientDetailPage       = lazy(() => import('@features/patients/components/PatientDetailPage'));
+// PatientDetailPage supprimée — remplacée par PatientFollowUpPage
 const PatientFollowUpPage     = lazy(() => import('@features/patients/components/PatientFollowUpPage'));
 const NewPatientPage          = lazy(() => import('@features/patients/components/NewPatientPage'));
 
 // Doctor features
 const PatientRequestsPage     = lazy(() => import('@features/patientRequests/components/PatientRequestsPage'));
-const MonitoringPage = lazy(() => import('@features/monitoring/components/MonitoringPage'));
+const MonitoringPage          = lazy(() => import('@features/monitoring/components/MonitoringPage'));
 
 // Alerts
 const AlertsPage              = lazy(() => import('@features/alerts/components/AlertsPage'));
@@ -29,7 +29,7 @@ const AlertsPage              = lazy(() => import('@features/alerts/components/A
 const DoctorsPage             = lazy(() => import('@features/doctors/components/DoctorsPage'));
 const HospitalsPage           = lazy(() => import('@features/hospitals/components/HospitalsPage'));
 
-// Notifications (doctor sees these, not messages)
+// Notifications
 const NotificationsPage       = lazy(() => import('@features/notifications/components/NotificationsPage'));
 
 // Health Content & Map
@@ -93,6 +93,7 @@ const AppRoutes: React.FC = () => {
                             </ProtectedRoute>
                         }
                     />
+
                     <Route
                         path="/monitoring"
                         element={
@@ -102,12 +103,14 @@ const AppRoutes: React.FC = () => {
                         }
                     />
 
-                    {/* Patients */}
+                    {/* Patients list */}
                     <Route path="/patients" element={<PatientsPage />} />
                     <Route path="/patients/new" element={<NewPatientPage />} />
-                    <Route path="/patients/:id" element={<PatientDetailPage />} />
 
-                    {/* Patient Follow-Up (doctor's detailed view with measurements, prescriptions) */}
+                    {/* Redirection : /patients/:id → /patients/:id/follow-up */}
+                    <Route path="/patients/:id" element={<Navigate to="follow-up" replace />} />
+
+                    {/* Fiche patient unifiée (mesures, ordonnances, alertes, médicaments) */}
                     <Route
                         path="/patients/:id/follow-up"
                         element={
@@ -160,7 +163,7 @@ const AppRoutes: React.FC = () => {
                         }
                     />
 
-                    {/* Notifications (doctor) — no messages inbox for doctor */}
+                    {/* Notifications */}
                     <Route path="/notifications" element={<NotificationsPage />} />
 
                     {/* Profile & Settings */}
