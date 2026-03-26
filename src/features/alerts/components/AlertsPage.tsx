@@ -108,6 +108,14 @@ const AlertsPage: React.FC = () => {
 
     const { start, end } = getWeekRange();
     const weekLabel = `${start.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} – ${end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    const today = new Date();
+
+    const dayLabel = today.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
 
     return (
         <div className="content-body">
@@ -116,11 +124,11 @@ const AlertsPage: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                     <div>
                         <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111827', marginBottom: 4 }}>
-                            Alertes de la semaine
+                            Alertes de la journée
                         </h1>
                         <p style={{ color: '#6b7280', fontSize: 14 }}>
                             <i className="fas fa-calendar-week" style={{ marginRight: 6, color: '#9ca3af' }} />
-                            {weekLabel}
+                            {dayLabel}
                         </p>
                     </div>
                     {unread > 0 && (

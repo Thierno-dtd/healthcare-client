@@ -531,7 +531,7 @@ const MonitoringPage: React.FC = () => {
     const sendMsg = useSendPatientMessage();
 
     // Simulate live activity injection every 30s
-    useEffect(() => {
+    /*useEffect(() => {
         const patientIds = ['p_001', 'p_002', 'p_007'];
         const interval = setInterval(() => {
             const pid = patientIds[Math.floor(Math.random() * patientIds.length)];
@@ -539,7 +539,7 @@ const MonitoringPage: React.FC = () => {
             setLiveCount(c => c + 1);
         }, 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, []);*/
 
     const filteredActivities = activities.filter(e => {
         const matchFilter = filter === 'all' || e.type === filter;
